@@ -34,12 +34,6 @@ export default function LoginPage() {
     }
   };
 
-  const fillCredentials = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
-    setError("");
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 relative overflow-hidden">
       {/* Background Glow */}
@@ -125,45 +119,6 @@ export default function LoginPage() {
               <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </form>
-
-          {/* Quick Demo Credentials */}
-          <div className="mt-6 pt-5 border-t border-slate-800 text-center">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2.5">
-              Quick Sign In
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => fillCredentials("santoshkingsahani95@gmail.com", "Daisy@143")}
-                className="py-2 px-2 text-xs font-semibold rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50 text-blue-200 transition-all flex flex-col items-center shadow-xs"
-              >
-                <span>Super Admin</span>
-                <span className="text-[10px] text-blue-300 font-mono font-normal truncate max-w-[140px]">
-                  santoshkingsahani95@gmail.com
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials("admin", "admin123")}
-                className="py-2 px-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition-all flex flex-col items-center"
-              >
-                <span>Admin</span>
-                <span className="text-[10px] text-slate-400 font-mono font-normal">
-                  admin / admin123
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials("staff", "staff123")}
-                className="py-2 px-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition-all flex flex-col items-center"
-              >
-                <span>Staff</span>
-                <span className="text-[10px] text-emerald-400 font-mono font-normal">
-                  staff / staff123
-                </span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
