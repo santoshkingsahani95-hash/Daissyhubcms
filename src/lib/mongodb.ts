@@ -1,4 +1,12 @@
+import dns from "dns";
 import mongoose from "mongoose";
+
+// Resolve DNS SRV queries reliably for MongoDB Atlas on Windows environments
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1"]);
+} catch {
+  // Ignore in restricted environments
+}
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/courier_erp";
 
