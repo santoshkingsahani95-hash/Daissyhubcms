@@ -82,14 +82,14 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Username
+                Username / Email
               </label>
               <div className="relative">
                 <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   required
-                  placeholder="admin or staff"
+                  placeholder="santoshkingsahani95@gmail.com or admin"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -131,21 +131,31 @@ export default function LoginPage() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2.5">
               Quick Sign In
             </span>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => fillCredentials("santoshkingsahani95@gmail.com", "Daisy@143")}
+                className="py-2 px-2 text-xs font-semibold rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50 text-blue-200 transition-all flex flex-col items-center shadow-xs"
+              >
+                <span>Super Admin</span>
+                <span className="text-[10px] text-blue-300 font-mono font-normal truncate max-w-[140px]">
+                  santoshkingsahani95@gmail.com
+                </span>
+              </button>
               <button
                 type="button"
                 onClick={() => fillCredentials("admin", "admin123")}
-                className="py-2 px-3 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition-all flex flex-col items-center"
+                className="py-2 px-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition-all flex flex-col items-center"
               >
                 <span>Admin</span>
-                <span className="text-[10px] text-blue-400 font-mono font-normal">
+                <span className="text-[10px] text-slate-400 font-mono font-normal">
                   admin / admin123
                 </span>
               </button>
               <button
                 type="button"
                 onClick={() => fillCredentials("staff", "staff123")}
-                className="py-2 px-3 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition-all flex flex-col items-center"
+                className="py-2 px-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition-all flex flex-col items-center"
               >
                 <span>Staff</span>
                 <span className="text-[10px] text-emerald-400 font-mono font-normal">

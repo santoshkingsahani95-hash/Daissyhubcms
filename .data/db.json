@@ -1,6 +1,39 @@
 {
   "users": [
     {
+      "_id": "user-superadmin-santosh",
+      "name": "Santosh Sahani",
+      "username": "santoshkingsahani95@gmail.com",
+      "email": "santoshkingsahani95@gmail.com",
+      "phone": "9801122334",
+      "passwordHash": "$2a$10$0PDrXRq/NgV4GKm5hszbJOqgtp4bedC9kUnQXMTj8fyxmvpgse/1u",
+      "role": "superadmin",
+      "permissions": [
+        "dashboard:view",
+        "parcels:create",
+        "parcels:edit",
+        "parcels:delete",
+        "parcels:import",
+        "batches:manage",
+        "delivery:update",
+        "returns:manage",
+        "couriers:manage",
+        "settlements:view",
+        "settlements:manage",
+        "payments:manage",
+        "ledger:view",
+        "reports:view",
+        "reports:export",
+        "users:manage",
+        "settings:manage",
+        "customers:view",
+        "customers:manage"
+      ],
+      "isActive": true,
+      "createdAt": "2026-11-18T14:00:36.780Z",
+      "updatedAt": "2026-11-18T14:00:36.782Z"
+    },
+    {
       "_id": "user-1",
       "name": "Santosh Sahani",
       "username": "admin",
@@ -28,7 +61,8 @@
       ],
       "isActive": true,
       "createdAt": "2026-11-04T17:02:54.947Z",
-      "updatedAt": "2026-11-04T17:02:54.947Z"
+      "updatedAt": "2026-11-04T17:02:54.947Z",
+      "passwordHash": "$2a$10$VdL9mUeEPcF2s/YvUWfH3OahpM7VIjUsZaBhX6wtxbXRcVEkCdt3u"
     },
     {
       "_id": "user-2",
@@ -47,7 +81,8 @@
       ],
       "isActive": true,
       "createdAt": "2026-11-04T17:02:54.947Z",
-      "updatedAt": "2026-11-04T17:02:54.947Z"
+      "updatedAt": "2026-11-04T17:02:54.947Z",
+      "passwordHash": "$2a$10$jWwKnlmznwuy.ZxRIhWMweBIzX8eHA.Wof..u4pck8ld49gta3qJq"
     }
   ],
   "couriers": [
