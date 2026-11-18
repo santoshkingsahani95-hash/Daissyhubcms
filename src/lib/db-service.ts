@@ -56,8 +56,12 @@ interface LocalDataStore {
 }
 
 function ensureLocalDataDir(): void {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+  } catch {
+    // Read-only filesystem on serverless platforms (e.g. Vercel)
   }
 }
 
@@ -264,81 +268,116 @@ export function ensureCachePreWarmed(): void {
 function readLocalData(): LocalDataStore {
   ensureCachePreWarmed();
   ensureLocalDataDir();
-  if (!fs.existsSync(DATA_FILE)) {
-    const initial: LocalDataStore = {
-      users: INITIAL_USERS,
-      couriers: INITIAL_COURIERS,
-      batches: INITIAL_BATCHES,
-      parcels: INITIAL_PARCELS,
-      returns: INITIAL_RETURNS,
-      settlements: INITIAL_SETTLEMENTS,
-      payments: INITIAL_PAYMENTS,
-      ledger: INITIAL_LEDGER,
-      settings: DEFAULT_SETTINGS,
-      activityLogs: [
-        {
-          _id: "act-1",
-          action: "SYSTEM_INITIALIZED",
-          details: "DaisyHub Courier Management & COD Settlement initialized",
-          userName: "Santosh Sahani",
-          createdAt: new Date().toISOString(),
-        },
-      ],
-    };
-    fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2), "utf-8");
-    cachedLocalStore = initial;
+
+  // 1. If already cached in memory, return it directly
+  if (cachedLocalStore) {
     try {
-      lastDataFileMtime = fs.statSync(DATA_FILE).mtimeMs;
+      if (fs.existsSync(DATA_FILE)) {
+        const stat = fs.statSync(DATA_FILE);
+        if (stat.mtimeMs === lastDataFileMtime) {
+          return cachedLocalStore;
+        }
+      }
     } catch {}
-    return initial;
   }
 
+  // 2. Try reading from project .data/db.json
   try {
-    const stat = fs.statSync(DATA_FILE);
-    if (cachedLocalStore && stat.mtimeMs === lastDataFileMtime) {
+    if (fs.existsSync(DATA_FILE)) {
+      const raw = fs.readFileSync(DATA_FILE, "utf-8");
+      const parsed = JSON.parse(raw);
+      try {
+        lastDataFileMtime = fs.statSync(DATA_FILE).mtimeMs;
+      } catch {}
+      cachedLocalStore = {
+        users: parsed.users || INITIAL_USERS,
+        couriers: parsed.couriers || INITIAL_COURIERS,
+        batches: parsed.batches || INITIAL_BATCHES,
+        parcels: parsed.parcels || INITIAL_PARCELS,
+        returns: parsed.returns || INITIAL_RETURNS,
+        settlements: parsed.settlements || INITIAL_SETTLEMENTS,
+        payments: parsed.payments || INITIAL_PAYMENTS,
+        ledger: parsed.ledger || INITIAL_LEDGER,
+        settings: parsed.settings || DEFAULT_SETTINGS,
+        activityLogs: parsed.activityLogs || [],
+      };
       return cachedLocalStore;
     }
+  } catch {}
 
-    const raw = fs.readFileSync(DATA_FILE, "utf-8");
-    const parsed = JSON.parse(raw);
-    lastDataFileMtime = stat.mtimeMs;
-    cachedLocalStore = {
-      users: parsed.users || INITIAL_USERS,
-      couriers: parsed.couriers || INITIAL_COURIERS,
-      batches: parsed.batches || INITIAL_BATCHES,
-      parcels: parsed.parcels || INITIAL_PARCELS,
-      returns: parsed.returns || INITIAL_RETURNS,
-      settlements: parsed.settlements || INITIAL_SETTLEMENTS,
-      payments: parsed.payments || INITIAL_PAYMENTS,
-      ledger: parsed.ledger || INITIAL_LEDGER,
-      settings: parsed.settings || DEFAULT_SETTINGS,
-      activityLogs: parsed.activityLogs || [],
-    };
-    return cachedLocalStore;
+  // 3. Fallback to /tmp/db.json if deployed in serverless read-only container
+  try {
+    const tmpFile = path.join("/tmp", "db.json");
+    if (fs.existsSync(tmpFile)) {
+      const raw = fs.readFileSync(tmpFile, "utf-8");
+      const parsed = JSON.parse(raw);
+      cachedLocalStore = {
+        users: parsed.users || INITIAL_USERS,
+        couriers: parsed.couriers || INITIAL_COURIERS,
+        batches: parsed.batches || INITIAL_BATCHES,
+        parcels: parsed.parcels || INITIAL_PARCELS,
+        returns: parsed.returns || INITIAL_RETURNS,
+        settlements: parsed.settlements || INITIAL_SETTLEMENTS,
+        payments: parsed.payments || INITIAL_PAYMENTS,
+        ledger: parsed.ledger || INITIAL_LEDGER,
+        settings: parsed.settings || DEFAULT_SETTINGS,
+        activityLogs: parsed.activityLogs || [],
+      };
+      return cachedLocalStore;
+    }
+  } catch {}
+
+  // 4. Default in-memory seed
+  const initial: LocalDataStore = {
+    users: INITIAL_USERS,
+    couriers: INITIAL_COURIERS,
+    batches: INITIAL_BATCHES,
+    parcels: INITIAL_PARCELS,
+    returns: INITIAL_RETURNS,
+    settlements: INITIAL_SETTLEMENTS,
+    payments: INITIAL_PAYMENTS,
+    ledger: INITIAL_LEDGER,
+    settings: DEFAULT_SETTINGS,
+    activityLogs: [
+      {
+        _id: "act-1",
+        action: "SYSTEM_INITIALIZED",
+        details: "DaisyHub Courier Management & COD Settlement initialized",
+        userName: "Santosh Sahani",
+        createdAt: new Date().toISOString(),
+      },
+    ],
+  };
+
+  // Try writing initial store if writable
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2), "utf-8");
+    lastDataFileMtime = fs.statSync(DATA_FILE).mtimeMs;
   } catch {
-    cachedLocalStore = {
-      users: INITIAL_USERS,
-      couriers: INITIAL_COURIERS,
-      batches: INITIAL_BATCHES,
-      parcels: INITIAL_PARCELS,
-      returns: INITIAL_RETURNS,
-      settlements: INITIAL_SETTLEMENTS,
-      payments: INITIAL_PAYMENTS,
-      ledger: INITIAL_LEDGER,
-      settings: DEFAULT_SETTINGS,
-      activityLogs: [],
-    };
-    return cachedLocalStore;
+    try {
+      fs.writeFileSync(path.join("/tmp", "db.json"), JSON.stringify(initial, null, 2), "utf-8");
+    } catch {}
   }
+
+  cachedLocalStore = initial;
+  return initial;
 }
 
 function writeLocalData(data: LocalDataStore): void {
   cachedLocalStore = data;
-  ensureLocalDataDir();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
   try {
-    lastDataFileMtime = fs.statSync(DATA_FILE).mtimeMs;
-  } catch {}
+    ensureLocalDataDir();
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
+    try {
+      lastDataFileMtime = fs.statSync(DATA_FILE).mtimeMs;
+    } catch {}
+  } catch (err: any) {
+    // Graceful fallback for serverless read-only filesystems (EROFS on Vercel)
+    try {
+      const tmpPath = path.join("/tmp", "db.json");
+      fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), "utf-8");
+    } catch {}
+  }
 }
 
 let isMongoAvailable: boolean | null = null;
