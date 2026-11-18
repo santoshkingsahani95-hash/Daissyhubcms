@@ -1,0 +1,2981 @@
+{
+  "users": [
+    {
+      "_id": "user-1",
+      "name": "Santosh Sahani",
+      "username": "admin",
+      "email": "accounts@garmentsnepal.com",
+      "phone": "9801122334",
+      "role": "admin",
+      "permissions": [
+        "dashboard:view",
+        "parcels:create",
+        "parcels:edit",
+        "parcels:delete",
+        "parcels:import",
+        "batches:manage",
+        "delivery:update",
+        "returns:manage",
+        "couriers:manage",
+        "settlements:view",
+        "settlements:manage",
+        "payments:manage",
+        "ledger:view",
+        "reports:view",
+        "reports:export",
+        "users:manage",
+        "settings:manage"
+      ],
+      "isActive": true,
+      "createdAt": "2026-11-04T17:02:54.947Z",
+      "updatedAt": "2026-11-04T17:02:54.947Z"
+    },
+    {
+      "_id": "user-2",
+      "name": "Staff Member",
+      "username": "staff",
+      "email": "staff@garmentsnepal.com",
+      "phone": "9841000000",
+      "role": "staff",
+      "permissions": [
+        "dashboard:view",
+        "parcels:create",
+        "batches:manage",
+        "delivery:update",
+        "returns:manage",
+        "reports:view"
+      ],
+      "isActive": true,
+      "createdAt": "2026-11-04T17:02:54.947Z",
+      "updatedAt": "2026-11-04T17:02:54.947Z"
+    }
+  ],
+  "couriers": [
+    {
+      "_id": "courier-1",
+      "name": "Google Express",
+      "code": "GEX",
+      "contactPerson": "Ramesh Sharma",
+      "phone": "9801122334",
+      "address": "New Baneshwor, Kathmandu",
+      "email": "ramesh@googleexpress.np",
+      "isActive": true,
+      "defaultChargeInsideValley": 70,
+      "defaultChargeOutsideValley": 150,
+      "returnChargeInsideValley": 0,
+      "returnChargeOutsideValley": 0,
+      "openingBalance": "0",
+      "currentBalance": 16070,
+      "totalParcelsDispatched": 31,
+      "totalDelivered": 25,
+      "totalReturned": 6,
+      "totalCodCollected": 39750,
+      "createdAt": "2026-11-04T17:02:54.947Z",
+      "updatedAt": "2026-11-18T06:20:54.823Z",
+      "serviceArea": "Inside Valley",
+      "defaultDeliveryCharge": "70"
+    },
+    {
+      "_id": "courier-2",
+      "name": "SP Express",
+      "code": "PTH",
+      "contactPerson": "Sunil Thapa",
+      "phone": "9841234567",
+      "address": "Putalisadak, Kathmandu",
+      "email": "",
+      "isActive": true,
+      "defaultChargeInsideValley": 70,
+      "defaultChargeOutsideValley": 160,
+      "returnChargeInsideValley": 0,
+      "returnChargeOutsideValley": 0,
+      "openingBalance": "0",
+      "currentBalance": 0,
+      "totalParcelsDispatched": 23,
+      "totalDelivered": 0,
+      "totalReturned": 0,
+      "totalCodCollected": 0,
+      "createdAt": "2026-11-04T17:02:54.947Z",
+      "updatedAt": "2026-11-05T07:44:11.097Z",
+      "serviceArea": "Inside Valley",
+      "defaultDeliveryCharge": "70"
+    },
+    {
+      "_id": "courier-3",
+      "name": "KDM Express",
+      "code": "NCM",
+      "contactPerson": "Prakash Adhikari",
+      "phone": "9812345678",
+      "address": "Kalanki, Kathmandu",
+      "email": "",
+      "isActive": true,
+      "defaultChargeInsideValley": 70,
+      "defaultChargeOutsideValley": 180,
+      "returnChargeInsideValley": 0,
+      "returnChargeOutsideValley": 0,
+      "openingBalance": "0",
+      "currentBalance": 0,
+      "totalParcelsDispatched": 0,
+      "totalDelivered": 0,
+      "totalReturned": 0,
+      "totalCodCollected": 0,
+      "createdAt": "2026-11-04T17:02:54.947Z",
+      "updatedAt": "2026-11-05T07:44:33.537Z",
+      "serviceArea": "Inside Valley",
+      "defaultDeliveryCharge": "70"
+    },
+    {
+      "_id": "courier-4",
+      "name": "Nepal Can Move",
+      "code": "SND",
+      "contactPerson": "Bikash Karki",
+      "phone": "9851000000",
+      "address": "Koteshwor, Kathmandu",
+      "email": "dispatch@sundarcourier.com",
+      "isActive": true,
+      "defaultChargeInsideValley": 65,
+      "defaultChargeOutsideValley": 220,
+      "returnChargeInsideValley": 0,
+      "returnChargeOutsideValley": 0,
+      "openingBalance": "0",
+      "currentBalance": 0,
+      "totalParcelsDispatched": 0,
+      "totalDelivered": 0,
+      "totalReturned": 0,
+      "totalCodCollected": 0,
+      "createdAt": "2026-11-04T17:02:54.947Z",
+      "updatedAt": "2026-11-05T07:44:58.352Z",
+      "serviceArea": "Outside Valley",
+      "defaultDeliveryCharge": "220"
+    }
+  ],
+  "batches": [
+    {
+      "_id": "batch-1795002208212",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "dispatchDate": "2026-11-18",
+      "serviceArea": "Inside Valley",
+      "notes": "",
+      "totalParcels": 23,
+      "totalCodAmount": 30000,
+      "totalAdvancePaid": 0,
+      "totalDeliveryCharges": 1610,
+      "deliveredCount": 0,
+      "failedCount": 0,
+      "returnedCount": 0,
+      "pendingCount": 23,
+      "status": "Active",
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "batch-1793872319998",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "dispatchDate": "2026-11-05",
+      "serviceArea": "Inside Valley",
+      "notes": "",
+      "totalParcels": 31,
+      "totalCodAmount": 46400,
+      "totalDeliveryCharges": 2170,
+      "deliveredCount": 25,
+      "failedCount": 0,
+      "returnedCount": 6,
+      "pendingCount": 0,
+      "status": "Active",
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T05:43:06.273Z",
+      "totalAdvancePaid": 150
+    }
+  ],
+  "parcels": [
+    {
+      "_id": "parcel-1793872319998-0",
+      "parcelId": "DH-20261105-001",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "sabita shrestha",
+      "customerPhone": "9744606687",
+      "customerAddress": "dhapasi",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "peacoat",
+      "codAmount": 850,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Returned to Warehouse",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:56:17.655Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Returned to Warehouse",
+          "timestamp": "2026-11-05T11:00:00.210Z",
+          "updatedBy": "Santosh Sahani",
+          "reason": "Customer rejected parcel",
+          "remarks": "Bulk return inward processed from batch BAT-20261105-001"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "returnDate": "2026-11-05",
+      "returnReason": "Customer rejected parcel",
+      "returnedProcessedBy": "Santosh Sahani",
+      "advancePayment": 0,
+      "totalOrderValue": 850,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-1",
+      "parcelId": "DH-20261105-002",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "sandhya magar",
+      "customerPhone": "9744620755",
+      "customerAddress": "basundhara",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "billier eilish",
+      "codAmount": 600,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 600,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-2",
+      "parcelId": "DH-20261105-003",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "krinjal tamang",
+      "customerPhone": "9826712205",
+      "customerAddress": "chamundagate",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "264-black",
+      "codAmount": 1050,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 1050,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-3",
+      "parcelId": "DH-20261105-004",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "asmita basnet",
+      "customerPhone": "9816979491",
+      "customerAddress": "sukedhara",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "peacoat",
+      "codAmount": 850,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 850,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-4",
+      "parcelId": "DH-20261105-005",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "renu thapa rai",
+      "customerPhone": "9818559111",
+      "customerAddress": "pipal bot",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "101-white",
+      "codAmount": 550,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 550,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-5",
+      "parcelId": "DH-20261105-006",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "ankita bhandari",
+      "customerPhone": "9847271483",
+      "customerAddress": "budhanilkantha",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "143-blue",
+      "codAmount": 450,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Returned to Warehouse",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Returned to Warehouse",
+          "timestamp": "2026-11-05T11:00:00.210Z",
+          "updatedBy": "Santosh Sahani",
+          "reason": "Customer rejected parcel",
+          "remarks": "Bulk return inward processed from batch BAT-20261105-001"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "returnDate": "2026-11-05",
+      "returnReason": "Customer rejected parcel",
+      "returnedProcessedBy": "Santosh Sahani",
+      "advancePayment": 0,
+      "totalOrderValue": 450,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-6",
+      "parcelId": "DH-20261105-007",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "samraghi bhattrai",
+      "customerPhone": "9803279986",
+      "customerAddress": "sukedhara",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "short pea coat",
+      "codAmount": 850,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 850,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-7",
+      "parcelId": "DH-20261105-008",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "aarati ray",
+      "customerPhone": "9745296761",
+      "customerAddress": "battisputali kumaripati",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "full hugging top",
+      "codAmount": 900,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 900,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-8",
+      "parcelId": "DH-20261105-009",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "dikshya",
+      "customerPhone": "9767236309",
+      "customerAddress": "science batuwa tar",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "short pea coat",
+      "codAmount": 850,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 850,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-9",
+      "parcelId": "DH-20261105-010",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "Dina shrestha",
+      "customerPhone": "9808490161",
+      "customerAddress": "sukedhara",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "semifolk",
+      "codAmount": 2550,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 2550,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-10",
+      "parcelId": "DH-20261105-011",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "sophiya 032",
+      "customerPhone": "9805384517",
+      "customerAddress": "baneshwor chowk",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "billie eilish",
+      "codAmount": 1850,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 1850,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-11",
+      "parcelId": "DH-20261105-012",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "Liba Bista",
+      "customerPhone": "9843141331",
+      "customerAddress": "purano baneshwor",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "bodyfitted tee",
+      "codAmount": 1850,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 1850,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-12",
+      "parcelId": "DH-20261105-013",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "sare mee",
+      "customerPhone": "9840789085",
+      "customerAddress": "",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "woolen dress blue",
+      "codAmount": 650,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 650,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-13",
+      "parcelId": "DH-20261105-014",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "Asmita tamang",
+      "customerPhone": "9757858047",
+      "customerAddress": "vb",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "new pacoat",
+      "codAmount": 1650,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Returned to Warehouse",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Returned to Warehouse",
+          "timestamp": "2026-11-05T10:56:04.481Z",
+          "updatedBy": "Santosh Sahani",
+          "reason": "Customer rejected parcel",
+          "remarks": "Bulk return inward processed from batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "Returned to Warehouse",
+          "newStatus": "Returned to Warehouse",
+          "timestamp": "2026-11-05T10:58:55.607Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "COD amount updated to Rs. 1650"
+        },
+        {
+          "previousStatus": "Returned to Warehouse",
+          "newStatus": "Returned to Warehouse",
+          "timestamp": "2026-11-06T08:34:24.067Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "COD amount updated to Rs. 1650 (Returned)"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "returnDate": "2026-11-05",
+      "returnReason": "Customer rejected parcel",
+      "returnedProcessedBy": "Santosh Sahani",
+      "advancePayment": 0,
+      "totalOrderValue": 1650,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-14",
+      "parcelId": "DH-20261105-015",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "unknown",
+      "customerPhone": "9847698188",
+      "customerAddress": "ffff",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "lininggut gray",
+      "codAmount": 700,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 700,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-15",
+      "parcelId": "DH-20261105-016",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "unnknownabf",
+      "customerPhone": "9849839146",
+      "customerAddress": "ffff",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "strip body",
+      "codAmount": 950,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 950,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-16",
+      "parcelId": "DH-20261105-017",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "Rabina Thapa",
+      "customerPhone": "9701010257",
+      "customerAddress": "vsyuvdcsnm",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "korean jacket",
+      "codAmount": 1850,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 1850,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-17",
+      "parcelId": "DH-20261105-018",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "Kritika",
+      "customerPhone": "9808771888",
+      "customerAddress": "hgslhbnm",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "fur jacket",
+      "codAmount": 550,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 550,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-18",
+      "parcelId": "DH-20261105-019",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "Kusum",
+      "customerPhone": "9840536113",
+      "customerAddress": "hjbwshjv",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "peacoat",
+      "codAmount": 850,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 850,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-19",
+      "parcelId": "DH-20261105-020",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "rubina chudal",
+      "customerPhone": "9761875810",
+      "customerAddress": "vvvv",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "173-green",
+      "codAmount": 2300,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Returned to Warehouse",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Returned to Warehouse",
+          "timestamp": "2026-11-05T10:56:04.481Z",
+          "updatedBy": "Santosh Sahani",
+          "reason": "Customer rejected parcel",
+          "remarks": "Bulk return inward processed from batch BAT-20261105-001"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "returnDate": "2026-11-05",
+      "returnReason": "Customer rejected parcel",
+      "returnedProcessedBy": "Santosh Sahani",
+      "advancePayment": 0,
+      "totalOrderValue": 2300,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-20",
+      "parcelId": "DH-20261105-021",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "sarita tandan",
+      "customerPhone": "9701959880",
+      "customerAddress": "vvevyualv",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "red peacoat",
+      "codAmount": 850,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Returned to Warehouse",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Returned to Warehouse",
+          "timestamp": "2026-11-05T11:00:00.210Z",
+          "updatedBy": "Santosh Sahani",
+          "reason": "Customer rejected parcel",
+          "remarks": "Bulk return inward processed from batch BAT-20261105-001"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "returnDate": "2026-11-05",
+      "returnReason": "Customer rejected parcel",
+      "returnedProcessedBy": "Santosh Sahani",
+      "advancePayment": 0,
+      "totalOrderValue": 850,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-21",
+      "parcelId": "DH-20261105-022",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "prosis gurung",
+      "customerPhone": "9844354789",
+      "customerAddress": "vvauycvhjs",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "billie eilish",
+      "codAmount": 600,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 600,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-22",
+      "parcelId": "DH-20261105-023",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "Anjana",
+      "customerPhone": "9707747577",
+      "customerAddress": "sarswatinagar",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "peacoat black",
+      "codAmount": 2000,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivery Attempt Failed",
+          "timestamp": "2026-11-05T09:55:39.435Z",
+          "updatedBy": "Santosh Sahani",
+          "reason": "Customer did not answer",
+          "remarks": ""
+        },
+        {
+          "previousStatus": "Delivery Attempt Failed",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:56:20.141Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Returned to Warehouse",
+          "timestamp": "2026-11-05T10:56:04.481Z",
+          "updatedBy": "Santosh Sahani",
+          "reason": "Customer rejected parcel",
+          "remarks": "Bulk return inward processed from batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "Returned to Warehouse",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-18T05:43:06.272Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "failureReason": "Customer did not answer",
+      "deliveredDate": "2026-11-18",
+      "returnDate": "2026-11-05",
+      "returnReason": "Customer rejected parcel",
+      "returnedProcessedBy": "Santosh Sahani",
+      "advancePayment": 0,
+      "totalOrderValue": 2000,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-23",
+      "parcelId": "DH-20261105-024",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "sankalpika thapa",
+      "customerPhone": "9818392374",
+      "customerAddress": "OSR digital gate",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "red peacoat",
+      "codAmount": 850,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 850,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-24",
+      "parcelId": "DH-20261105-025",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "Asmita khadka",
+      "customerPhone": "9702287974",
+      "customerAddress": "ranhitit gyanmala school",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "164, 185, zip",
+      "codAmount": 2200,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 2200,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-25",
+      "parcelId": "DH-20261105-026",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "aayusha",
+      "customerPhone": "9819278651",
+      "customerAddress": "sidhartha bank anamnagar",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "101-2",
+      "codAmount": 950,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T11:02:02.199Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "COD amount updated to Rs. 950"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-06T07:39:54.595Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "COD amount updated to Rs. 1050"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-06T08:43:05.394Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "COD amount updated to Rs. 950"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 950,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-26",
+      "parcelId": "DH-20261105-027",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "samita shrestha",
+      "customerPhone": "9813535130",
+      "customerAddress": "KTM tinkune",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "multiple items",
+      "codAmount": 3300,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T11:02:02.199Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "COD amount updated to Rs. 3300"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-06T07:39:54.595Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "COD amount updated to Rs. 3400"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-06T08:43:05.394Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "COD amount updated to Rs. 3300"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 3300,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-27",
+      "parcelId": "DH-20261105-028",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "swastika",
+      "customerPhone": "9818106324",
+      "customerAddress": "sankhmul tower",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "multiple",
+      "codAmount": 7700,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-06T08:30:11.227Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "COD amount updated to Rs. 7700"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-06T08:37:08.481Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "COD amount updated to Rs. 7850"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-06T08:59:17.470Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "COD amount updated to Rs. 7700"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 150,
+      "totalOrderValue": 7850,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-28",
+      "parcelId": "DH-20261105-029",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "shresthi timsina",
+      "customerPhone": "9814933318",
+      "customerAddress": "lokanthali",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "264 grey",
+      "codAmount": 2350,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 2350,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-29",
+      "parcelId": "DH-20261105-030",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "liyana sunar",
+      "customerPhone": "9768019302",
+      "customerAddress": "takhel lalitpur",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "strip body fit tee",
+      "codAmount": 550,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Returned to Warehouse",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Returned to Warehouse",
+          "timestamp": "2026-11-05T11:07:00.353Z",
+          "updatedBy": "Santosh Sahani",
+          "reason": "Customer rejected parcel",
+          "remarks": "Bulk return inward processed from batch BAT-20261105-001"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "returnDate": "2026-11-05",
+      "returnReason": "Customer rejected parcel",
+      "returnedProcessedBy": "Santosh Sahani",
+      "advancePayment": 0,
+      "totalOrderValue": 550,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1793872319998-30",
+      "parcelId": "DH-20261105-031",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "Krishna Khanal",
+      "customerPhone": "98601223277",
+      "customerAddress": "amamnagar",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "264-marun",
+      "codAmount": 2350,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "Delivered",
+      "dispatchDate": "2026-11-05",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-05T09:51:59.998Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch BAT-20261105-001"
+        },
+        {
+          "previousStatus": "With Courier",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:43.049Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        },
+        {
+          "previousStatus": "Delivered",
+          "newStatus": "Delivered",
+          "timestamp": "2026-11-05T09:54:45.228Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Reconciled and confirmed delivered"
+        }
+      ],
+      "isSettled": true,
+      "createdAt": "2026-11-05T09:51:59.998Z",
+      "updatedAt": "2026-11-18T06:18:31.198Z",
+      "deliveredDate": "2026-11-05",
+      "advancePayment": 0,
+      "totalOrderValue": 2350,
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18"
+    },
+    {
+      "_id": "parcel-1795002208212-0",
+      "parcelId": "DH-20261118-001",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "pramila khadka",
+      "customerPhone": "97007565399",
+      "customerAddress": "KUpan balwakhari",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "264(Blue",
+      "codAmount": 2350,
+      "advancePayment": 0,
+      "totalOrderValue": 2350,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-1",
+      "parcelId": "DH-20261118-002",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Alisha Gururng",
+      "customerPhone": "9704901023",
+      "customerAddress": "dewa chowk nabil bank",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "top and rouse set black , semi formal set top brown , semi formal set",
+      "codAmount": 1550,
+      "advancePayment": 0,
+      "totalOrderValue": 1550,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-2",
+      "parcelId": "DH-20261118-003",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Aayusha Luitel",
+      "customerPhone": "9862954328",
+      "customerAddress": "Sukedhara marg",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "strip t-shirt black",
+      "codAmount": 700,
+      "advancePayment": 0,
+      "totalOrderValue": 700,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-3",
+      "parcelId": "DH-20261118-004",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Srijana tamang",
+      "customerPhone": "9769382340",
+      "customerAddress": "Gokaneshwor ward 4",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "257 black",
+      "codAmount": 1250,
+      "advancePayment": 0,
+      "totalOrderValue": 1250,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-4",
+      "parcelId": "DH-20261118-005",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "chairing",
+      "customerPhone": "9744419210",
+      "customerAddress": "chabahil dental hospital",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "peacoat black",
+      "codAmount": 1550,
+      "advancePayment": 0,
+      "totalOrderValue": 1550,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-5",
+      "parcelId": "DH-20261118-006",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Aayusha",
+      "customerPhone": "9843899280",
+      "customerAddress": "Basundhara herald school",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "hoodie set black",
+      "codAmount": 2550,
+      "advancePayment": 0,
+      "totalOrderValue": 2550,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-6",
+      "parcelId": "DH-20261118-007",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "pari",
+      "customerPhone": "9803580326",
+      "customerAddress": "Nyinba snooker fast food",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "173 green",
+      "codAmount": 800,
+      "advancePayment": 0,
+      "totalOrderValue": 800,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-7",
+      "parcelId": "DH-20261118-008",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Zenisha Dhunganan",
+      "customerPhone": "9842411820",
+      "customerAddress": "tinkune gaurigau",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "strip t shirt black",
+      "codAmount": 700,
+      "advancePayment": 0,
+      "totalOrderValue": 700,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-8",
+      "parcelId": "DH-20261118-009",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "srijana tamang",
+      "customerPhone": "9769382340",
+      "customerAddress": "gokaneshwor ward 4",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "137 white 144 green",
+      "codAmount": 1050,
+      "advancePayment": 0,
+      "totalOrderValue": 1050,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-9",
+      "parcelId": "DH-20261118-010",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Manisha tamang",
+      "customerPhone": "9801096022",
+      "customerAddress": "Dervi Tower new baneshwor",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "leather jacket brown",
+      "codAmount": 1650,
+      "advancePayment": 0,
+      "totalOrderValue": 1650,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-10",
+      "parcelId": "DH-20261118-011",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Chhirirng sherpa",
+      "customerPhone": "9761639926",
+      "customerAddress": "yuba club ktm",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "peacoat black",
+      "codAmount": 1550,
+      "advancePayment": 0,
+      "totalOrderValue": 1550,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-11",
+      "parcelId": "DH-20261118-012",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Apekshya Acharya",
+      "customerPhone": "9810701713",
+      "customerAddress": "pahelopul chabahil ktm",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "peacoat black",
+      "codAmount": 1550,
+      "advancePayment": 0,
+      "totalOrderValue": 1550,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-12",
+      "parcelId": "DH-20261118-013",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "swetha",
+      "customerPhone": "9818450442",
+      "customerAddress": "hariyo pul",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "leather jacket return and exchange",
+      "codAmount": 0,
+      "advancePayment": 0,
+      "totalOrderValue": 0,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-13",
+      "parcelId": "DH-20261118-014",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "soni moktan",
+      "customerPhone": "9823513592",
+      "customerAddress": "bhairavchowk ktm",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "baggy ribtar  4 set brown",
+      "codAmount": 1000,
+      "advancePayment": 0,
+      "totalOrderValue": 1000,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-14",
+      "parcelId": "DH-20261118-015",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "swostika tamang",
+      "customerPhone": "9816184659",
+      "customerAddress": "tamang gumba boudha ktm",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "baggy hoodie bworn",
+      "codAmount": 1550,
+      "advancePayment": 0,
+      "totalOrderValue": 1550,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-15",
+      "parcelId": "DH-20261118-016",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Doma",
+      "customerPhone": "9828847498",
+      "customerAddress": "Boudha ktm",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "Black exchange",
+      "codAmount": 0,
+      "advancePayment": 0,
+      "totalOrderValue": 0,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-16",
+      "parcelId": "DH-20261118-017",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Puspa Adhikari",
+      "customerPhone": "9704609784",
+      "customerAddress": "chabel ganesthan",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "144 black",
+      "codAmount": 1200,
+      "advancePayment": 0,
+      "totalOrderValue": 1200,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-17",
+      "parcelId": "DH-20261118-018",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Shristina thapa magar",
+      "customerPhone": "9707505156",
+      "customerAddress": "Budhanilkantha rudreshwor",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "top adn trouser set black",
+      "codAmount": 1050,
+      "advancePayment": 0,
+      "totalOrderValue": 1050,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-18",
+      "parcelId": "DH-20261118-019",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Supriya tiwari",
+      "customerPhone": "9865592595",
+      "customerAddress": "Dakshindhoka jorpatan",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "semi formal fleece top blue",
+      "codAmount": 650,
+      "advancePayment": 0,
+      "totalOrderValue": 650,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-19",
+      "parcelId": "DH-20261118-020",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Niruta tamang",
+      "customerPhone": "9860005869",
+      "customerAddress": "Gorkhali bridge",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "Tweed Cardigan and skirt 2 grey",
+      "codAmount": 2550,
+      "advancePayment": 0,
+      "totalOrderValue": 2550,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-20",
+      "parcelId": "DH-20261118-021",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Manita",
+      "customerPhone": "9841506687",
+      "customerAddress": "Gokarneshwor suntakhan krishna mandir",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "peacoat black",
+      "codAmount": 1550,
+      "advancePayment": 0,
+      "totalOrderValue": 1550,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-21",
+      "parcelId": "DH-20261118-022",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "surabhistha",
+      "customerPhone": "9763234725",
+      "customerAddress": "Kapan kharibot near CU mark",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "peacoat black , 183 grey",
+      "codAmount": 2300,
+      "advancePayment": 0,
+      "totalOrderValue": 2300,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "parcel-1795002208212-22",
+      "parcelId": "DH-20261118-023",
+      "batchId": "SE-20261118-001",
+      "courierId": "courier-2",
+      "courierName": "SP Express",
+      "customerName": "Isha shrestha",
+      "customerPhone": "9704583308",
+      "customerAddress": "ryder camera shop",
+      "deliveryArea": "Inside Valley",
+      "itemSku": "183 back",
+      "codAmount": 900,
+      "advancePayment": 0,
+      "totalOrderValue": 900,
+      "deliveryCharge": 70,
+      "remarks": "",
+      "status": "With Courier",
+      "dispatchDate": "2026-11-18",
+      "statusHistory": [
+        {
+          "newStatus": "With Courier",
+          "timestamp": "2026-11-18T11:43:28.212Z",
+          "updatedBy": "Santosh Sahani",
+          "remarks": "Dispatched in Batch SE-20261118-001"
+        }
+      ],
+      "isSettled": false,
+      "createdAt": "2026-11-18T11:43:28.212Z",
+      "updatedAt": "2026-11-18T11:43:28.212Z"
+    }
+  ],
+  "returns": [
+    {
+      "_id": "ret-1793876820353-0",
+      "returnId": "RET-20261105-007",
+      "parcelId": "DH-20261105-030",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "liyana sunar",
+      "customerPhone": "9768019902",
+      "codAmount": 550,
+      "itemSku": "strip body fit tee",
+      "customerAddress": "takhel lalitpur",
+      "deliveryCharge": 70,
+      "returnCharge": 0,
+      "returnReason": "Customer rejected parcel",
+      "returnDate": "2026-11-05",
+      "processedBy": "Santosh Sahani",
+      "notes": "",
+      "createdAt": "2026-11-05T11:07:00.353Z"
+    },
+    {
+      "_id": "ret-1793876400210-2",
+      "returnId": "RET-20261105-006",
+      "parcelId": "DH-20261105-001",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "sabita shrestha",
+      "customerPhone": "9744606687",
+      "codAmount": 850,
+      "itemSku": "peacoat",
+      "customerAddress": "dhapasi",
+      "deliveryCharge": 70,
+      "returnCharge": 0,
+      "returnReason": "Customer rejected parcel",
+      "returnDate": "2026-11-05",
+      "processedBy": "Santosh Sahani",
+      "notes": "",
+      "createdAt": "2026-11-05T11:00:00.210Z"
+    },
+    {
+      "_id": "ret-1793876400210-1",
+      "returnId": "RET-20261105-005",
+      "parcelId": "DH-20261105-021",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "sarita tandan",
+      "customerPhone": "9701959880",
+      "codAmount": 850,
+      "itemSku": "red peacoat",
+      "customerAddress": "vvevyualv",
+      "deliveryCharge": 70,
+      "returnCharge": 0,
+      "returnReason": "Customer rejected parcel",
+      "returnDate": "2026-11-05",
+      "processedBy": "Santosh Sahani",
+      "notes": "",
+      "createdAt": "2026-11-05T11:00:00.210Z"
+    },
+    {
+      "_id": "ret-1793876400210-0",
+      "returnId": "RET-20261105-004",
+      "parcelId": "DH-20261105-006",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "ankita bhandari",
+      "customerPhone": "9747271483",
+      "codAmount": 450,
+      "itemSku": "143-blue",
+      "customerAddress": "budhanilkantha",
+      "deliveryCharge": 70,
+      "returnCharge": 0,
+      "returnReason": "Customer rejected parcel",
+      "returnDate": "2026-11-05",
+      "processedBy": "Santosh Sahani",
+      "notes": "",
+      "createdAt": "2026-11-05T11:00:00.210Z"
+    },
+    {
+      "_id": "ret-1793876164481-2",
+      "returnId": "RET-20261105-003",
+      "parcelId": "DH-20261105-020",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "rubina chudal",
+      "customerPhone": "9761875810",
+      "codAmount": 2300,
+      "itemSku": "173-green",
+      "customerAddress": "vvvv",
+      "deliveryCharge": 70,
+      "returnCharge": 0,
+      "returnReason": "Customer rejected parcel",
+      "returnDate": "2026-11-05",
+      "processedBy": "Santosh Sahani",
+      "notes": "",
+      "createdAt": "2026-11-05T10:56:04.481Z"
+    },
+    {
+      "_id": "ret-1793876164481-1",
+      "returnId": "RET-20261105-002",
+      "parcelId": "DH-20261105-014",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "Asmita tamang",
+      "customerPhone": "9757858047",
+      "codAmount": 1050,
+      "itemSku": "new pacoat",
+      "customerAddress": "vb",
+      "deliveryCharge": 70,
+      "returnCharge": 0,
+      "returnReason": "Customer rejected parcel",
+      "returnDate": "2026-11-05",
+      "processedBy": "Santosh Sahani",
+      "notes": "",
+      "createdAt": "2026-11-05T10:56:04.481Z"
+    },
+    {
+      "_id": "ret-1793876164481-0",
+      "returnId": "RET-20261105-001",
+      "parcelId": "DH-20261105-023",
+      "batchId": "BAT-20261105-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "customerName": "Anjana",
+      "customerPhone": "9707747577",
+      "codAmount": 2000,
+      "itemSku": "peacoat black",
+      "customerAddress": "sarswatinagar",
+      "deliveryCharge": 70,
+      "returnCharge": 0,
+      "returnReason": "Customer rejected parcel",
+      "returnDate": "2026-11-05",
+      "processedBy": "Santosh Sahani",
+      "notes": "",
+      "createdAt": "2026-11-05T10:56:04.481Z"
+    }
+  ],
+  "settlements": [
+    {
+      "_id": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "settlementDate": "2026-11-18",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "serviceArea": "Inside Valley",
+      "startDate": "2026-11-05",
+      "endDate": "2026-11-18",
+      "deliveredParcelsCount": 24,
+      "returnedParcelsCount": 7,
+      "totalProcessedCount": 31,
+      "grossCodCollection": 37750,
+      "totalAdvancePaid": 150,
+      "totalOrderValue": 37900,
+      "deliveryCharges": 1680,
+      "returnCharges": 0,
+      "currentNetReceivable": 36070,
+      "previousOutstandingDue": 0,
+      "totalReceivable": 36070,
+      "paymentReceived": 20000,
+      "remainingDue": 16070,
+      "paymentStatus": "Partially Paid",
+      "cashReceived": 15000,
+      "onlineReceived": 5000,
+      "paymentInstallments": [
+        {
+          "_id": "inst-1794982854823",
+          "paymentNumber": "PAY-20261118-001",
+          "paymentDate": "2026-11-18",
+          "amount": 20000,
+          "cashAmount": 15000,
+          "onlineAmount": 5000,
+          "paymentMethod": "Split (Cash + Online)",
+          "referenceNumber": "nov4555",
+          "remarks": "Payment installment for #SET-20261118-001",
+          "recordedBy": "Santosh Sahani",
+          "recordedAt": "2026-11-18T06:20:54.823Z"
+        }
+      ],
+      "paymentMethod": "Bank Transfer",
+      "paymentReference": "",
+      "notes": "",
+      "settledParcels": [
+        "DH-20261105-002",
+        "DH-20261105-003",
+        "DH-20261105-004",
+        "DH-20261105-005",
+        "DH-20261105-007",
+        "DH-20261105-008",
+        "DH-20261105-009",
+        "DH-20261105-010",
+        "DH-20261105-011",
+        "DH-20261105-012",
+        "DH-20261105-013",
+        "DH-20261105-015",
+        "DH-20261105-016",
+        "DH-20261105-017",
+        "DH-20261105-018",
+        "DH-20261105-019",
+        "DH-20261105-022",
+        "DH-20261105-024",
+        "DH-20261105-025",
+        "DH-20261105-026",
+        "DH-20261105-027",
+        "DH-20261105-028",
+        "DH-20261105-029",
+        "DH-20261105-031",
+        "DH-20261105-001",
+        "DH-20261105-006",
+        "DH-20261105-014",
+        "DH-20261105-020",
+        "DH-20261105-021",
+        "DH-20261105-023",
+        "DH-20261105-030"
+      ],
+      "status": "Finalized",
+      "preparedBy": "Santosh Sahani",
+      "authorizedBy": "Prabhat Chandra K.C.(Finance Manager)",
+      "courierRepName": "Ramesh Sharma",
+      "createdAt": "2026-11-18T06:18:31.198Z",
+      "updatedAt": "2026-11-18T06:20:54.823Z"
+    }
+  ],
+  "payments": [
+    {
+      "_id": "pay-1794982854823",
+      "paymentNumber": "PAY-20261118-001",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "settlementId": "settle-1794982711198",
+      "settlementNumber": "#SET-20261118-001",
+      "amount": 20000,
+      "cashAmount": 15000,
+      "onlineAmount": 5000,
+      "onlineMethod": "Bank Transfer",
+      "paymentDate": "2026-11-18",
+      "paymentMethod": "Split (Cash + Online)",
+      "referenceNumber": "nov4555",
+      "remarks": "Settlement #SET-20261118-001: Payment installment for #SET-20261118-001",
+      "recordedBy": "Santosh Sahani",
+      "createdAt": "2026-11-18T06:20:54.823Z"
+    }
+  ],
+  "ledger": [
+    {
+      "_id": "led-1794982711199-1",
+      "ledgerId": "LED-11199-1",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "transactionDate": "2026-11-18",
+      "transactionType": "Delivered COD",
+      "referenceNumber": "#SET-20261118-001",
+      "description": "Delivered COD collected (24 parcels)",
+      "debit": 37750,
+      "credit": 0,
+      "runningBalance": 37750,
+      "createdBy": "Santosh Sahani",
+      "createdAt": "2026-11-18T06:18:31.198Z"
+    },
+    {
+      "_id": "led-1794982711199-2",
+      "ledgerId": "LED-11199-2",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "transactionDate": "2026-11-18",
+      "transactionType": "Delivery Charge",
+      "referenceNumber": "#SET-20261118-001",
+      "description": "Delivery charges for 24 parcels",
+      "debit": 0,
+      "credit": 1680,
+      "runningBalance": 36070,
+      "createdBy": "Santosh Sahani",
+      "createdAt": "2026-11-18T06:18:31.198Z"
+    },
+    {
+      "_id": "led-1794982854823",
+      "ledgerId": "LED-54823",
+      "courierId": "courier-1",
+      "courierName": "Google Express",
+      "transactionDate": "2026-11-18",
+      "transactionType": "Payment Received",
+      "referenceNumber": "nov4555",
+      "description": "Settlement #SET-20261118-001 installment received via Split (Cash + Online) (Cash: Rs. 15000, Online: Rs. 5000)",
+      "debit": 0,
+      "credit": 20000,
+      "runningBalance": 16070,
+      "createdBy": "Santosh Sahani",
+      "createdAt": "2026-11-18T06:20:54.823Z"
+    }
+  ],
+  "settings": {
+    "companyName": "DaisyHub E-Commerce Pvt. Ltd.",
+    "panVatNumber": "609876543",
+    "corporateAddress": "kathmandu-16",
+    "phones": "+977- 9803535531",
+    "email": "accounts@garmentsnepal.com",
+    "signatoryNameTitle": "Prabhat Chandra K.C.(Finance Manager)",
+    "billFooterNotice": "This is a computer-generated courier settlement statement. For any queries, contact accounts department within 7 business days.",
+    "currency": "NPR",
+    "currencySymbol": "Rs.",
+    "dateFormat": "YYYY-MM-DD",
+    "defaultChargeInsideValley": 70,
+    "defaultChargeOutsideValley": 150,
+    "defaultReturnChargeInsideValley": 35,
+    "defaultReturnChargeOutsideValley": 75
+  },
+  "activityLogs": [
+    {
+      "_id": "act-1795002208212",
+      "action": "BATCH_CREATED",
+      "details": "Created batch SE-20261118-001 with 23 parcels for SP Express",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-18T11:43:28.212Z"
+    },
+    {
+      "_id": "act-1794982854823",
+      "action": "SETTLEMENT_PAYMENT_COLLECTED",
+      "details": "Settlement #SET-20261118-001 payment Rs. 20000 (Cash: 15000, Online: 5000) recorded by Santosh Sahani. Remaining Due: Rs. 16070",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-18T06:20:54.823Z"
+    },
+    {
+      "_id": "act-1794982711199",
+      "action": "SETTLEMENT_FINALIZED",
+      "details": "Settlement #SET-20261118-001 finalized for Google Express. Gross COD: Rs. 37750, Remaining Due: Rs. 36070",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-18T06:18:31.198Z"
+    },
+    {
+      "_id": "act-1794980841166",
+      "action": "SETTLEMENT_DELETED",
+      "details": "Deleted settlement statement #SET-20261105-001 for Google Express. 31 parcels unlocked and returned to unsettled status.",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-18T05:47:21.166Z"
+    },
+    {
+      "_id": "act-1793955557471",
+      "action": "BATCH_UPDATED",
+      "details": "Updated batch BAT-20261105-001 (31 parcels, Total COD: Rs. 46400)",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-06T08:59:17.470Z"
+    },
+    {
+      "_id": "act-1793954585395",
+      "action": "BATCH_UPDATED",
+      "details": "Updated batch BAT-20261105-001 (31 parcels, Total COD: Rs. 46550)",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-06T08:43:05.394Z"
+    },
+    {
+      "_id": "act-1793954228482",
+      "action": "BATCH_UPDATED",
+      "details": "Updated batch BAT-20261105-001 (31 parcels, Total COD: Rs. 46750)",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-06T08:37:08.481Z"
+    },
+    {
+      "_id": "act-1793954147801",
+      "action": "BATCH_UPDATED",
+      "details": "Updated batch BAT-20261105-001 (31 parcels, Total COD: Rs. 46600)",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-06T08:35:47.800Z"
+    },
+    {
+      "_id": "act-1793954064068",
+      "action": "BATCH_UPDATED",
+      "details": "Updated batch BAT-20261105-001 (31 parcels, Total COD: Rs. 46600)",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-06T08:34:24.067Z"
+    },
+    {
+      "_id": "act-1793953811228",
+      "action": "BATCH_UPDATED",
+      "details": "Updated batch BAT-20261105-001 (31 parcels, Total COD: Rs. 46000)",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-06T08:30:11.227Z"
+    },
+    {
+      "_id": "act-1793950812843",
+      "action": "BATCH_UPDATED",
+      "details": "Updated batch BAT-20261105-001 (31 parcels, Total COD: Rs. 46150)",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-06T07:40:12.843Z"
+    },
+    {
+      "_id": "act-1793950794596",
+      "action": "BATCH_UPDATED",
+      "details": "Updated batch BAT-20261105-001 (31 parcels, Total COD: Rs. 46150)",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-06T07:39:54.595Z"
+    },
+    {
+      "_id": "act-1793877355603",
+      "action": "SETTLEMENT_FINALIZED",
+      "details": "Settlement #SET-20261105-001 finalized for Google Express. Gross COD: Rs. 37900, Remaining Due: Rs. 0",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-05T11:15:55.603Z"
+    },
+    {
+      "_id": "act-1793876820353",
+      "action": "PARCEL_RETURNED",
+      "details": "Bulk inwarded 1 returned parcels from batch BAT-20261105-001",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-05T11:07:00.353Z"
+    },
+    {
+      "_id": "act-1793876801603",
+      "action": "BATCH_UPDATED",
+      "details": "Updated batch BAT-20261105-001 (31 parcels, Total COD: Rs. 46550)",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-05T11:06:41.602Z"
+    },
+    {
+      "_id": "act-1793876522199",
+      "action": "BATCH_UPDATED",
+      "details": "Updated batch BAT-20261105-001 (31 parcels, Total COD: Rs. 46550)",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-05T11:02:02.199Z"
+    },
+    {
+      "_id": "act-1793876400210",
+      "action": "PARCEL_RETURNED",
+      "details": "Bulk inwarded 3 returned parcels from batch BAT-20261105-001",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-05T11:00:00.210Z"
+    },
+    {
+      "_id": "act-1793876335607",
+      "action": "BATCH_UPDATED",
+      "details": "Updated batch BAT-20261105-001 (31 parcels, Total COD: Rs. 46750)",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-05T10:58:55.607Z"
+    },
+    {
+      "_id": "act-1793876164481",
+      "action": "PARCEL_RETURNED",
+      "details": "Bulk inwarded 3 returned parcels from batch BAT-20261105-001",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-05T10:56:04.481Z"
+    },
+    {
+      "_id": "act-1793872328005",
+      "action": "BATCH_CREATED",
+      "details": "Created batch BAT-20261105-001 with 31 parcels for Google Express",
+      "userName": "Santosh Sahani",
+      "createdAt": "2026-11-05T09:51:59.998Z"
+    }
+  ]
+}
