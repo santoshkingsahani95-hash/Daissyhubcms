@@ -128,14 +128,20 @@ export default function BulkParcelEntryPage() {
   };
 
   const updateRow = (index: number, field: keyof ParcelRow, value: string) => {
+    let finalValue = value;
+    if (field === "customerPhone") {
+      // Only digits allowed, max 10 characters
+      finalValue = value.replace(/\D/g, "").slice(0, 10);
+    }
+
     setRows((prev) => {
       const copy = [...prev];
-      copy[index] = { ...copy[index], [field]: value };
+      copy[index] = { ...copy[index], [field]: finalValue };
       return copy;
     });
 
-    if (field === "customerPhone" && value.trim().length >= 10) {
-      autoLookupCustomer(value.trim(), index);
+    if (field === "customerPhone" && finalValue.length === 10) {
+      autoLookupCustomer(finalValue, index);
     }
   };
 
@@ -366,10 +372,11 @@ export default function BulkParcelEntryPage() {
       }
 
       if (name || phone) {
+        const cleanPhone = phone.replace(/\D/g, "").slice(0, 10);
         parsedRows.push({
           id: "row-paste-" + Date.now() + "-" + i,
           customerName: name,
-          customerPhone: phone,
+          customerPhone: cleanPhone,
           codAmount: cod,
           advancePayment: advance,
           itemSku: sku,
@@ -433,6 +440,16 @@ export default function BulkParcelEntryPage() {
 
     if (parcelsToSave.length === 0) {
       toast.error("Please enter at least one valid parcel with Customer Name and Mobile Number.");
+      return;
+    }
+
+    const invalidPhoneRow = parcelsToSave.find(
+      (p) => p.customerPhone.trim().length !== 10
+    );
+    if (invalidPhoneRow) {
+      toast.error(
+        `Mobile number for "${invalidPhoneRow.customerName || "Parcel"}" must be exactly 10 digits (currently ${invalidPhoneRow.customerPhone.trim().length} digits).`
+      );
       return;
     }
 
@@ -749,28 +766,48 @@ export default function BulkParcelEntryPage() {
 
                     {/* Mobile Number */}
                     <td className="py-1 px-2 relative">
-                      <input
-                        id={`cell-${idx}-1`}
-                        type="text"
-                        placeholder="98XXXXXXXX"
-                        value={row.customerPhone}
-                        onChange={(e) => updateRow(idx, "customerPhone", e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(e, idx, 1)}
-                        className={`w-full px-2 py-1.5 text-xs rounded-lg border bg-transparent focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none transition-all ${
-                          isDup
-                            ? "border-amber-400 bg-amber-50/30 text-amber-900 dark:text-amber-200"
-                            : "border-transparent hover:border-slate-200 focus:border-blue-500"
-                        }`}
-                      />
-                      {isDup && (
-                        <span
-                          title="Same mobile used for multiple parcels (Allowed)"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/90 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 flex items-center gap-1 cursor-help shadow-xs"
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                          MULTI
-                        </span>
-                      )}
+                      {(() => {
+                        const phoneVal = row.customerPhone.trim();
+                        const isInvalidPhone = phoneVal.length > 0 && phoneVal.length !== 10;
+                        return (
+                          <>
+                            <input
+                              id={`cell-${idx}-1`}
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={10}
+                              placeholder="98XXXXXXXX"
+                              value={row.customerPhone}
+                              onChange={(e) => updateRow(idx, "customerPhone", e.target.value)}
+                              onKeyDown={(e) => handleKeyDown(e, idx, 1)}
+                              className={`w-full px-2 py-1.5 text-xs rounded-lg border font-mono transition-all focus:outline-none ${
+                                isInvalidPhone
+                                  ? "border-rose-500 bg-rose-50/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-200 ring-1 ring-rose-400 focus:border-rose-600 focus:ring-rose-500 pr-12 font-semibold"
+                                  : isDup
+                                  ? "border-amber-400 bg-amber-50/30 text-amber-900 dark:text-amber-200 pr-14"
+                                  : "border-transparent hover:border-slate-200 focus:border-blue-500 bg-transparent focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                              }`}
+                            />
+                            {isInvalidPhone && (
+                              <span
+                                title={`Mobile number must be exactly 10 digits (${phoneVal.length}/10)`}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-700/60 flex items-center select-none pointer-events-none"
+                              >
+                                {phoneVal.length}/10
+                              </span>
+                            )}
+                            {!isInvalidPhone && isDup && (
+                              <span
+                                title="Same mobile used for multiple parcels (Allowed)"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/90 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 flex items-center gap-1 cursor-help shadow-xs"
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                MULTI
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
                     </td>
 
                     {/* Address (Next to Mobile Number) */}

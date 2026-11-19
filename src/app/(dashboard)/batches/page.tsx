@@ -190,9 +190,13 @@ export default function ParcelBatchesPage() {
   };
 
   const handleUpdateParcelField = (idx: number, field: keyof EditParcelRow, value: any) => {
+    let finalValue = value;
+    if (field === "customerPhone") {
+      finalValue = String(value).replace(/\D/g, "").slice(0, 10);
+    }
     setEditParcels((prev) => {
       const copy = [...prev];
-      copy[idx] = { ...copy[idx], [field]: value };
+      copy[idx] = { ...copy[idx], [field]: finalValue };
       return copy;
     });
   };
@@ -217,6 +221,12 @@ export default function ParcelBatchesPage() {
     );
     if (validRows.length === 0) {
       toast.error("At least one parcel with Customer Name and Mobile Number is required.");
+      return;
+    }
+
+    const invalidPhone = validRows.find((p) => p.customerPhone?.trim().length !== 10);
+    if (invalidPhone) {
+      toast.error(`Mobile number for "${invalidPhone.customerName || "Parcel"}" must be exactly 10 digits.`);
       return;
     }
 
@@ -793,15 +803,37 @@ export default function ParcelBatchesPage() {
                               required
                             />
                           </td>
-                          <td className="py-1.5 px-2">
-                            <input
-                              type="text"
-                              value={p.customerPhone}
-                              onChange={(e) => handleUpdateParcelField(idx, "customerPhone", e.target.value)}
-                              placeholder="98XXXXXXXX"
-                              className="w-full px-2 py-1 text-xs font-mono rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500"
-                              required
-                            />
+                          <td className="py-1.5 px-2 relative">
+                            {(() => {
+                              const pVal = (p.customerPhone || "").trim();
+                              const isInvalid = pVal.length > 0 && pVal.length !== 10;
+                              return (
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={10}
+                                    value={p.customerPhone}
+                                    onChange={(e) => handleUpdateParcelField(idx, "customerPhone", e.target.value)}
+                                    placeholder="98XXXXXXXX"
+                                    className={`w-full px-2 py-1 text-xs font-mono rounded border transition-all ${
+                                      isInvalid
+                                        ? "border-rose-500 bg-rose-50/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-200 ring-1 ring-rose-400 focus:border-rose-600 focus:ring-rose-500 pr-12 font-semibold"
+                                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500"
+                                    }`}
+                                    required
+                                  />
+                                  {isInvalid && (
+                                    <span
+                                      title="Must be 10 digits"
+                                      className="absolute right-1.5 top-1/2 -translate-y-1/2 px-1 py-0.5 rounded text-[8px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-700 select-none pointer-events-none"
+                                    >
+                                      {pVal.length}/10
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="py-1.5 px-2">
                             <input

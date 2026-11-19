@@ -3270,9 +3270,8 @@ export async function getDashboardStats(filters?: {
 
   const local = readLocalData();
   const today = getTodayString();
-  const allParcels = await getParcels();
 
-  let parcels = allParcels;
+  let parcels = local.parcels;
   if (filters?.courierId) {
     parcels = parcels.filter((p) => p.courierId === filters.courierId);
   }
@@ -3283,7 +3282,7 @@ export async function getDashboardStats(filters?: {
     parcels = parcels.filter((p) => p.dispatchDate <= filters.endDate!);
   }
 
-  const dispatchedToday = allParcels.filter(
+  const dispatchedToday = local.parcels.filter(
     (p) =>
       p.dispatchDate === today &&
       (!filters?.courierId || p.courierId === filters.courierId)
