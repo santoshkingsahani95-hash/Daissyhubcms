@@ -36,8 +36,9 @@ export interface IParcelDocument extends Document {
   updatedAt: Date;
 }
 
-const ParcelSchema = new Schema<IParcelDocument>(
+const ParcelSchema = new Schema<any>(
   {
+    _id: { type: String },
     parcelId: {
       type: String,
       required: true,

@@ -13,7 +13,7 @@ export interface IImportBatchDocument extends Document {
     totalCod: number;
   }[];
   createdBy: {
-    _id: mongoose.Types.ObjectId;
+    _id: mongoose.Types.ObjectId | string;
     name: string;
     username: string;
   };
@@ -21,8 +21,9 @@ export interface IImportBatchDocument extends Document {
   updatedAt: Date;
 }
 
-const ImportBatchSchema = new Schema<IImportBatchDocument>(
+const ImportBatchSchema = new Schema<any>(
   {
+    _id: { type: String },
     batchId: {
       type: String,
       required: true,
@@ -43,7 +44,7 @@ const ImportBatchSchema = new Schema<IImportBatchDocument>(
       },
     ],
     createdBy: {
-      _id: { type: Schema.Types.ObjectId, ref: "User", required: true },
+      _id: { type: Schema.Types.Mixed, ref: "User", required: true },
       name: { type: String, required: true },
       username: { type: String, required: true },
     },

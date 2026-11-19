@@ -22,8 +22,9 @@ export interface ISystemSettingDocument extends Document {
   updatedAt: Date;
 }
 
-const SystemSettingSchema = new Schema<ISystemSettingDocument>(
+const SystemSettingSchema = new Schema<any>(
   {
+    _id: { type: String },
     companyName: {
       type: String,
       default: "DaisyHub E-Commerce Pvt. Ltd.",

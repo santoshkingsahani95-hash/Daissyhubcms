@@ -24,8 +24,9 @@ export interface ICourierCompanyDocument extends Document {
   updatedAt: Date;
 }
 
-const CourierCompanySchema = new Schema<ICourierCompanyDocument>(
+const CourierCompanySchema = new Schema<any>(
   {
+    _id: { type: String },
     name: {
       type: String,
       required: true,

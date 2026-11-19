@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IActivityLogDocument extends Document {
   user: {
-    _id: mongoose.Types.ObjectId;
+    _id: mongoose.Types.ObjectId | string;
     name: string;
     username: string;
     role: string;
@@ -14,10 +14,11 @@ export interface IActivityLogDocument extends Document {
   createdAt: Date;
 }
 
-const ActivityLogSchema = new Schema<IActivityLogDocument>(
+const ActivityLogSchema = new Schema<any>(
   {
+    _id: { type: String },
     user: {
-      _id: { type: Schema.Types.ObjectId, ref: "User", required: true },
+      _id: { type: Schema.Types.Mixed, ref: "User", required: true },
       name: { type: String, required: true },
       username: { type: String, required: true },
       role: { type: String, required: true },

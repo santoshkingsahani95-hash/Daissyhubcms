@@ -17,8 +17,9 @@ export interface ICourierLedgerEntryDocument extends Document {
   updatedAt: Date;
 }
 
-const CourierLedgerEntrySchema = new Schema<ICourierLedgerEntryDocument>(
+const CourierLedgerEntrySchema = new Schema<any>(
   {
+    _id: { type: String },
     ledgerId: {
       type: String,
       required: true,

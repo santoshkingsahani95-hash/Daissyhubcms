@@ -21,8 +21,9 @@ export interface IReturnDocument extends Document {
   updatedAt: Date;
 }
 
-const ReturnSchema = new Schema<IReturnDocument>(
+const ReturnSchema = new Schema<any>(
   {
+    _id: { type: String },
     returnId: {
       type: String,
       required: true,

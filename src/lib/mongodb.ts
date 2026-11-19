@@ -3,12 +3,17 @@ import mongoose from "mongoose";
 
 // Resolve DNS SRV queries reliably for MongoDB Atlas on Windows environments
 try {
-  dns.setServers(["8.8.8.8", "1.1.1.1"]);
+  if (process.platform === "win32") {
+    dns.setServers(["8.8.8.8", "1.1.1.1"]);
+  }
 } catch {
   // Ignore in restricted environments
 }
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/courier_erp";
+const DEFAULT_MONGODB_URI =
+  "mongodb+srv://shresthafinance2082_db_user:FSWWlN96r8VaQK1E@cluster0.n39jgu9.mongodb.net/courier_erp?retryWrites=true&w=majority";
+
+const MONGODB_URI = process.env.MONGODB_URI || DEFAULT_MONGODB_URI;
 
 interface MongooseCache {
   conn: typeof mongoose | null;
@@ -35,10 +40,11 @@ export async function connectDB(): Promise<typeof mongoose> {
   }
 
   if (!cached.promise) {
-    const opts = {
+    const opts: mongoose.ConnectOptions = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 8000,
-      connectTimeoutMS: 10000,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
     };
 
     cached.promise = mongoose

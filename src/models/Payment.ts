@@ -21,8 +21,9 @@ export interface IPaymentDocument extends Document {
   updatedAt: Date;
 }
 
-const PaymentSchema = new Schema<IPaymentDocument>(
+const PaymentSchema = new Schema<any>(
   {
+    _id: { type: String },
     paymentNumber: {
       type: String,
       required: true,

@@ -16,8 +16,9 @@ export interface ICustomerDocument extends Document {
   updatedAt: Date;
 }
 
-const CustomerSchema = new Schema<ICustomerDocument>(
+const CustomerSchema = new Schema<any>(
   {
+    _id: { type: String },
     name: { type: String, required: true, trim: true },
     phone: {
       type: String,

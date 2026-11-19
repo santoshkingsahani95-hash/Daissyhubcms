@@ -25,8 +25,9 @@ export interface IBatchDocument extends Document {
   updatedAt: Date;
 }
 
-const BatchSchema = new Schema<IBatchDocument>(
+const BatchSchema = new Schema<any>(
   {
+    _id: { type: String },
     batchId: {
       type: String,
       required: true,

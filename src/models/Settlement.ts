@@ -38,8 +38,9 @@ export interface ISettlementDocument extends Document {
   updatedAt: Date;
 }
 
-const SettlementSchema = new Schema<ISettlementDocument>(
+const SettlementSchema = new Schema<any>(
   {
+    _id: { type: String },
     settlementNumber: {
       type: String,
       required: true,

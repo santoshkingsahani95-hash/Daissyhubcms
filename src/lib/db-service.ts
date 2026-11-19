@@ -380,16 +380,104 @@ function writeLocalData(data: LocalDataStore): void {
   }
 }
 
-let isMongoAvailable: boolean | null = null;
+let isMongoSyncing = false;
+let hasSyncedToMongo = false;
+
+export async function ensureMongoInitialized(): Promise<void> {
+  if (hasSyncedToMongo || isMongoSyncing) return;
+  isMongoSyncing = true;
+  try {
+    const local = readLocalData();
+
+    // 1. Ensure users exist
+    const userCount = await User.countDocuments();
+    if (userCount === 0 && local.users.length > 0) {
+      await User.insertMany(local.users);
+    } else {
+      // Ensure users exist
+      for (const u of local.users) {
+        await User.findOneAndUpdate(
+          { username: u.username },
+          { $setOnInsert: u },
+          { upsert: true }
+        );
+      }
+    }
+
+    // 2. Ensure couriers exist
+    const courierCount = await CourierCompany.countDocuments();
+    if (courierCount === 0 && local.couriers.length > 0) {
+      await CourierCompany.insertMany(local.couriers);
+    }
+
+    // 3. Ensure system settings exist
+    const settingsCount = await SystemSetting.countDocuments();
+    if (settingsCount === 0 && local.settings) {
+      await SystemSetting.create({
+        _id: "settings-1",
+        ...local.settings,
+      });
+    }
+
+    // 4. Ensure batches exist
+    const batchCount = await Batch.countDocuments();
+    if (batchCount === 0 && local.batches.length > 0) {
+      await Batch.insertMany(local.batches);
+    }
+
+    // 5. Ensure parcels exist
+    const parcelCount = await Parcel.countDocuments();
+    if (parcelCount === 0 && local.parcels.length > 0) {
+      await Parcel.insertMany(local.parcels);
+    }
+
+    // 6. Ensure returns exist
+    const returnCount = await Return.countDocuments();
+    if (returnCount === 0 && local.returns.length > 0) {
+      await Return.insertMany(local.returns);
+    }
+
+    // 7. Ensure settlements exist
+    const settlementCount = await Settlement.countDocuments();
+    if (settlementCount === 0 && local.settlements.length > 0) {
+      await Settlement.insertMany(local.settlements);
+    }
+
+    // 8. Ensure payments exist
+    const paymentCount = await Payment.countDocuments();
+    if (paymentCount === 0 && local.payments.length > 0) {
+      await Payment.insertMany(local.payments);
+    }
+
+    // 9. Ensure ledger entries exist
+    const ledgerCount = await CourierLedgerEntry.countDocuments();
+    if (ledgerCount === 0 && local.ledger.length > 0) {
+      await CourierLedgerEntry.insertMany(local.ledger);
+    }
+
+    hasSyncedToMongo = true;
+  } catch (err: any) {
+    console.warn("MongoDB auto-seed notice:", err.message);
+  } finally {
+    isMongoSyncing = false;
+  }
+}
 
 export async function checkMongoConnection(): Promise<boolean> {
-  if (isMongoAvailable !== null) return isMongoAvailable;
+  if (mongoose.connection && mongoose.connection.readyState === 1) {
+    if (!hasSyncedToMongo && !isMongoSyncing) {
+      ensureMongoInitialized().catch(() => {});
+    }
+    return true;
+  }
   try {
-    await connectDB();
-    isMongoAvailable = mongoose.connection.readyState === 1;
-    return isMongoAvailable;
+    const conn = await connectDB();
+    const isReady = !!(conn && conn.connection && conn.connection.readyState === 1);
+    if (isReady && !hasSyncedToMongo && !isMongoSyncing) {
+      ensureMongoInitialized().catch(() => {});
+    }
+    return isReady;
   } catch {
-    isMongoAvailable = false;
     return false;
   }
 }
@@ -648,9 +736,14 @@ export async function getBatches(filters?: {
       const query: any = {};
       if (filters?.courierId) query.courierId = filters.courierId;
       if (filters?.status) query.status = filters.status;
+      if (filters?.startDate || filters?.endDate) {
+        query.dispatchDate = {};
+        if (filters.startDate) query.dispatchDate.$gte = filters.startDate;
+        if (filters.endDate) query.dispatchDate.$lte = filters.endDate;
+      }
       const batches = await Batch.find(query).sort({ createdAt: -1 }).lean();
-      if (batches.length > 0) {
-        const parsed = JSON.parse(JSON.stringify(batches));
+      const parsed = JSON.parse(JSON.stringify(batches));
+      if (parsed.length > 0 || hasFilters) {
         if (!hasFilters) dbCache.set("all_batches", parsed, "batches", 1800);
         return parsed;
       }
@@ -1197,12 +1290,17 @@ export async function getParcels(filters?: {
           { itemSku: regex },
         ];
       }
+      if (filters?.startDate || filters?.endDate) {
+        query.dispatchDate = {};
+        if (filters.startDate) query.dispatchDate.$gte = filters.startDate;
+        if (filters.endDate) query.dispatchDate.$lte = filters.endDate;
+      }
       const parcels = await Parcel.find(query)
         .sort({ createdAt: -1 })
         .limit(filters?.limit || 1000)
         .lean();
-      if (parcels.length > 0) {
-        const parsed = JSON.parse(JSON.stringify(parcels));
+      const parsed = JSON.parse(JSON.stringify(parcels));
+      if (parsed.length > 0 || hasFilters) {
         if (!hasFilters) dbCache.set("all_parcels", parsed, "parcels", 1800);
         return parsed;
       }
@@ -1774,9 +1872,14 @@ export async function getReturns(filters?: {
     try {
       const query: any = {};
       if (filters?.courierId) query.courierId = filters.courierId;
+      if (filters?.startDate || filters?.endDate) {
+        query.returnDate = {};
+        if (filters.startDate) query.returnDate.$gte = filters.startDate;
+        if (filters.endDate) query.returnDate.$lte = filters.endDate;
+      }
       const returns = await Return.find(query).sort({ createdAt: -1 }).lean();
-      if (returns.length > 0) {
-        const parsed = JSON.parse(JSON.stringify(returns));
+      const parsed = JSON.parse(JSON.stringify(returns));
+      if (parsed.length > 0 || hasFilters) {
         if (!hasFilters) dbCache.set("all_returns", parsed, "returns", 1800);
         return parsed;
       }
@@ -2435,8 +2538,8 @@ export async function getSettlements(filters?: {
       if (filters?.courierId) query.courierId = filters.courierId;
       if (filters?.status) query.status = filters.status;
       const settlements = await Settlement.find(query).sort({ createdAt: -1 }).lean();
-      if (settlements.length > 0) {
-        const parsed = JSON.parse(JSON.stringify(settlements));
+      const parsed = JSON.parse(JSON.stringify(settlements));
+      if (parsed.length > 0 || hasFilters) {
         if (!hasFilters) dbCache.set("all_settlements", parsed, "settlements", 1800);
         return parsed;
       }
@@ -2652,8 +2755,16 @@ export async function getPayments(filters?: {
     try {
       const query: any = {};
       if (filters?.courierId) query.courierId = filters.courierId;
+      if (filters?.startDate || filters?.endDate) {
+        query.paymentDate = {};
+        if (filters.startDate) query.paymentDate.$gte = filters.startDate;
+        if (filters.endDate) query.paymentDate.$lte = filters.endDate;
+      }
       const payments = await Payment.find(query).sort({ createdAt: -1 }).lean();
-      if (payments.length > 0) return JSON.parse(JSON.stringify(payments));
+      const parsed = JSON.parse(JSON.stringify(payments));
+      if (parsed.length > 0 || filters?.courierId || filters?.startDate || filters?.endDate) {
+        return parsed;
+      }
     } catch {}
   }
 
@@ -3037,14 +3148,30 @@ export async function getCourierLedger(
   const courier = await getCourierById(courierId);
   if (!courier) throw new Error("Courier not found");
 
-  const local = readLocalData();
-  let entries = local.ledger.filter((e) => e.courierId === courierId);
-
-  if (startDate) {
-    entries = entries.filter((e) => e.transactionDate >= startDate);
+  let entries: ICourierLedgerEntry[] = [];
+  const isMongo = await checkMongoConnection();
+  if (isMongo) {
+    try {
+      const query: any = { courierId };
+      if (startDate || endDate) {
+        query.transactionDate = {};
+        if (startDate) query.transactionDate.$gte = startDate;
+        if (endDate) query.transactionDate.$lte = endDate;
+      }
+      const mongoEntries = await CourierLedgerEntry.find(query).sort({ transactionDate: 1 }).lean();
+      entries = JSON.parse(JSON.stringify(mongoEntries));
+    } catch {}
   }
-  if (endDate) {
-    entries = entries.filter((e) => e.transactionDate <= endDate);
+
+  if (entries.length === 0) {
+    const local = readLocalData();
+    entries = local.ledger.filter((e) => e.courierId === courierId);
+    if (startDate) {
+      entries = entries.filter((e) => e.transactionDate >= startDate);
+    }
+    if (endDate) {
+      entries = entries.filter((e) => e.transactionDate <= endDate);
+    }
   }
 
   let deliveredCod = 0;
@@ -3143,8 +3270,9 @@ export async function getDashboardStats(filters?: {
 
   const local = readLocalData();
   const today = getTodayString();
+  const allParcels = await getParcels();
 
-  let parcels = local.parcels;
+  let parcels = allParcels;
   if (filters?.courierId) {
     parcels = parcels.filter((p) => p.courierId === filters.courierId);
   }
@@ -3155,7 +3283,7 @@ export async function getDashboardStats(filters?: {
     parcels = parcels.filter((p) => p.dispatchDate <= filters.endDate!);
   }
 
-  const dispatchedToday = local.parcels.filter(
+  const dispatchedToday = allParcels.filter(
     (p) =>
       p.dispatchDate === today &&
       (!filters?.courierId || p.courierId === filters.courierId)
