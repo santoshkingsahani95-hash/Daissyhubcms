@@ -419,42 +419,6 @@ export async function ensureMongoInitialized(): Promise<void> {
       });
     }
 
-    // 4. Ensure batches exist
-    const batchCount = await Batch.countDocuments();
-    if (batchCount === 0 && local.batches.length > 0) {
-      await Batch.insertMany(local.batches);
-    }
-
-    // 5. Ensure parcels exist
-    const parcelCount = await Parcel.countDocuments();
-    if (parcelCount === 0 && local.parcels.length > 0) {
-      await Parcel.insertMany(local.parcels);
-    }
-
-    // 6. Ensure returns exist
-    const returnCount = await Return.countDocuments();
-    if (returnCount === 0 && local.returns.length > 0) {
-      await Return.insertMany(local.returns);
-    }
-
-    // 7. Ensure settlements exist
-    const settlementCount = await Settlement.countDocuments();
-    if (settlementCount === 0 && local.settlements.length > 0) {
-      await Settlement.insertMany(local.settlements);
-    }
-
-    // 8. Ensure payments exist
-    const paymentCount = await Payment.countDocuments();
-    if (paymentCount === 0 && local.payments.length > 0) {
-      await Payment.insertMany(local.payments);
-    }
-
-    // 9. Ensure ledger entries exist
-    const ledgerCount = await CourierLedgerEntry.countDocuments();
-    if (ledgerCount === 0 && local.ledger.length > 0) {
-      await CourierLedgerEntry.insertMany(local.ledger);
-    }
-
     hasSyncedToMongo = true;
   } catch (err: any) {
     console.warn("MongoDB auto-seed notice:", err.message);
@@ -555,19 +519,15 @@ export async function findUserByUsername(username: string): Promise<{
 // COURIER SERVICES
 // -------------------------------------------------------------
 export async function getCouriers(): Promise<ICourierCompany[]> {
-  const cached = dbCache.get<ICourierCompany[]>("all_couriers", "couriers");
-  if (cached) return cached;
-
-  let couriers: ICourierCompany[] = [];
   const isMongo = await checkMongoConnection();
   if (isMongo) {
-    const list = await CourierCompany.find().sort({ name: 1 }).lean();
-    if (list.length > 0) couriers = JSON.parse(JSON.stringify(list));
-  } else {
-    couriers = readLocalData().couriers;
+    try {
+      const list = await CourierCompany.find().sort({ name: 1 }).lean();
+      return JSON.parse(JSON.stringify(list));
+    } catch {}
   }
 
-  dbCache.set("all_couriers", couriers, "couriers", 1800);
+  const couriers = readLocalData().couriers;
   return couriers;
 }
 
@@ -723,13 +683,6 @@ export async function getBatches(filters?: {
   startDate?: string;
   endDate?: string;
 }): Promise<IBatch[]> {
-  ensureCachePreWarmed();
-  const hasFilters = Boolean(filters?.courierId || filters?.status || filters?.startDate || filters?.endDate);
-  if (!hasFilters) {
-    const cached = dbCache.get<IBatch[]>("all_batches", "batches");
-    if (cached) return cached;
-  }
-
   const isMongo = await checkMongoConnection();
   if (isMongo) {
     try {
@@ -742,12 +695,10 @@ export async function getBatches(filters?: {
         if (filters.endDate) query.dispatchDate.$lte = filters.endDate;
       }
       const batches = await Batch.find(query).sort({ createdAt: -1 }).lean();
-      const parsed = JSON.parse(JSON.stringify(batches));
-      if (parsed.length > 0 || hasFilters) {
-        if (!hasFilters) dbCache.set("all_batches", parsed, "batches", 1800);
-        return parsed;
-      }
-    } catch { }
+      return JSON.parse(JSON.stringify(batches));
+    } catch (err: any) {
+      console.warn("MongoDB getBatches error, fallback to local:", err.message);
+    }
   }
 
   const local = readLocalData();
@@ -777,9 +728,6 @@ export async function getBatches(filters?: {
     return b;
   });
 
-  if (!hasFilters) {
-    dbCache.set("all_batches", batches, "batches", 1800);
-  }
   if (filters?.courierId) {
     batches = batches.filter((b) => b.courierId === filters.courierId);
   }
@@ -1242,37 +1190,6 @@ export async function getParcels(filters?: {
   endDate?: string;
   limit?: number;
 }): Promise<IParcel[]> {
-  ensureCachePreWarmed();
-
-  // Fast path: cached batch parcels
-  if (
-    filters?.batchId &&
-    !filters.courierId &&
-    !filters.status &&
-    !filters.search &&
-    filters.isSettled === undefined &&
-    !filters.startDate &&
-    !filters.endDate
-  ) {
-    const cachedBatchParcels = dbCache.get<IParcel[]>(`batch_parcels_${filters.batchId}`, "parcels");
-    if (cachedBatchParcels) return cachedBatchParcels;
-  }
-
-  const hasFilters = Boolean(
-    filters?.batchId ||
-    filters?.courierId ||
-    filters?.status ||
-    filters?.search ||
-    filters?.isSettled !== undefined ||
-    filters?.startDate ||
-    filters?.endDate
-  );
-
-  if (!hasFilters) {
-    const cached = dbCache.get<IParcel[]>("all_parcels", "parcels");
-    if (cached) return filters?.limit ? cached.slice(0, filters.limit) : cached;
-  }
-
   const isMongo = await checkMongoConnection();
   if (isMongo) {
     try {
@@ -1299,18 +1216,11 @@ export async function getParcels(filters?: {
         .sort({ createdAt: -1 })
         .limit(filters?.limit || 1000)
         .lean();
-      const parsed = JSON.parse(JSON.stringify(parcels));
-      if (parsed.length > 0 || hasFilters) {
-        if (!hasFilters) dbCache.set("all_parcels", parsed, "parcels", 1800);
-        return parsed;
-      }
+      return JSON.parse(JSON.stringify(parcels));
     } catch { }
   }
 
   let parcels = readLocalData().parcels;
-  if (!hasFilters) {
-    dbCache.set("all_parcels", parcels, "parcels", 1800);
-  }
 
   if (filters?.batchId) {
     parcels = parcels.filter((p) => p.batchId === filters.batchId);
@@ -1860,13 +1770,6 @@ export async function getReturns(filters?: {
   endDate?: string;
   search?: string;
 }): Promise<IReturnRecord[]> {
-  ensureCachePreWarmed();
-  const hasFilters = Boolean(filters?.courierId || filters?.startDate || filters?.endDate || filters?.search);
-  if (!hasFilters) {
-    const cached = dbCache.get<IReturnRecord[]>("all_returns", "returns");
-    if (cached) return cached;
-  }
-
   const isMongo = await checkMongoConnection();
   if (isMongo) {
     try {
@@ -1878,18 +1781,12 @@ export async function getReturns(filters?: {
         if (filters.endDate) query.returnDate.$lte = filters.endDate;
       }
       const returns = await Return.find(query).sort({ createdAt: -1 }).lean();
-      const parsed = JSON.parse(JSON.stringify(returns));
-      if (parsed.length > 0 || hasFilters) {
-        if (!hasFilters) dbCache.set("all_returns", parsed, "returns", 1800);
-        return parsed;
-      }
+      return JSON.parse(JSON.stringify(returns));
     } catch { }
   }
 
   let returns = readLocalData().returns;
-  if (!hasFilters) {
-    dbCache.set("all_returns", returns, "returns", 1800);
-  }
+
   if (filters?.courierId) {
     returns = returns.filter((r) => r.courierId === filters.courierId);
   }
@@ -2524,13 +2421,6 @@ export async function getSettlements(filters?: {
   status?: string;
   search?: string;
 }): Promise<ISettlement[]> {
-  ensureCachePreWarmed();
-  const hasFilters = Boolean(filters?.courierId || filters?.status || filters?.search);
-  if (!hasFilters) {
-    const cached = dbCache.get<ISettlement[]>("all_settlements", "settlements");
-    if (cached) return cached;
-  }
-
   const isMongo = await checkMongoConnection();
   if (isMongo) {
     try {
@@ -2538,18 +2428,12 @@ export async function getSettlements(filters?: {
       if (filters?.courierId) query.courierId = filters.courierId;
       if (filters?.status) query.status = filters.status;
       const settlements = await Settlement.find(query).sort({ createdAt: -1 }).lean();
-      const parsed = JSON.parse(JSON.stringify(settlements));
-      if (parsed.length > 0 || hasFilters) {
-        if (!hasFilters) dbCache.set("all_settlements", parsed, "settlements", 1800);
-        return parsed;
-      }
+      return JSON.parse(JSON.stringify(settlements));
     } catch { }
   }
 
   let settlements = readLocalData().settlements;
-  if (!hasFilters) {
-    dbCache.set("all_settlements", settlements, "settlements", 1800);
-  }
+
   if (filters?.courierId) {
     settlements = settlements.filter((s) => s.courierId === filters.courierId);
   }
