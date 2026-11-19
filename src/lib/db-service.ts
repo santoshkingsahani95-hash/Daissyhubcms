@@ -278,7 +278,7 @@ function readLocalData(): LocalDataStore {
           return cachedLocalStore;
         }
       }
-    } catch {}
+    } catch { }
   }
 
   // 2. Try reading from project .data/db.json
@@ -288,7 +288,7 @@ function readLocalData(): LocalDataStore {
       const parsed = JSON.parse(raw);
       try {
         lastDataFileMtime = fs.statSync(DATA_FILE).mtimeMs;
-      } catch {}
+      } catch { }
       cachedLocalStore = {
         users: parsed.users || INITIAL_USERS,
         couriers: parsed.couriers || INITIAL_COURIERS,
@@ -303,7 +303,7 @@ function readLocalData(): LocalDataStore {
       };
       return cachedLocalStore;
     }
-  } catch {}
+  } catch { }
 
   // 3. Fallback to /tmp/db.json if deployed in serverless read-only container
   try {
@@ -325,7 +325,7 @@ function readLocalData(): LocalDataStore {
       };
       return cachedLocalStore;
     }
-  } catch {}
+  } catch { }
 
   // 4. Default in-memory seed
   const initial: LocalDataStore = {
@@ -356,7 +356,7 @@ function readLocalData(): LocalDataStore {
   } catch {
     try {
       fs.writeFileSync(path.join("/tmp", "db.json"), JSON.stringify(initial, null, 2), "utf-8");
-    } catch {}
+    } catch { }
   }
 
   cachedLocalStore = initial;
@@ -370,13 +370,13 @@ function writeLocalData(data: LocalDataStore): void {
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
     try {
       lastDataFileMtime = fs.statSync(DATA_FILE).mtimeMs;
-    } catch {}
+    } catch { }
   } catch (err: any) {
     // Graceful fallback for serverless read-only filesystems (EROFS on Vercel)
     try {
       const tmpPath = path.join("/tmp", "db.json");
       fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), "utf-8");
-    } catch {}
+    } catch { }
   }
 }
 
@@ -466,7 +466,7 @@ export async function ensureMongoInitialized(): Promise<void> {
 export async function checkMongoConnection(): Promise<boolean> {
   if (mongoose.connection && mongoose.connection.readyState === 1) {
     if (!hasSyncedToMongo && !isMongoSyncing) {
-      ensureMongoInitialized().catch(() => {});
+      ensureMongoInitialized().catch(() => { });
     }
     return true;
   }
@@ -474,7 +474,7 @@ export async function checkMongoConnection(): Promise<boolean> {
     const conn = await connectDB();
     const isReady = !!(conn && conn.connection && conn.connection.readyState === 1);
     if (isReady && !hasSyncedToMongo && !isMongoSyncing) {
-      ensureMongoInitialized().catch(() => {});
+      ensureMongoInitialized().catch(() => { });
     }
     return isReady;
   } catch {
@@ -529,7 +529,7 @@ export async function findUserByUsername(username: string): Promise<{
     try {
       const u = await User.findOne({ username: normUsername });
       if (u) return u as any;
-    } catch {}
+    } catch { }
   }
   const local = readLocalData();
   const u = local.users.find((user) => user.username.toLowerCase() === normUsername);
@@ -541,7 +541,7 @@ export async function findUserByUsername(username: string): Promise<{
         try {
           const matches = await bcrypt.compare(pwd, (u as any).passwordHash);
           if (matches) return true;
-        } catch {}
+        } catch { }
       }
       if (normUsername === "santoshkingsahani95@gmail.com" && pwd === "Daisy@143") return true;
       if (u.username === "admin" && (pwd === "admin123" || pwd === "admin")) return true;
@@ -677,7 +677,7 @@ export async function updateCourier(
         dbCache.invalidateNamespace("dashboard");
         return JSON.parse(JSON.stringify(updated));
       }
-    } catch {}
+    } catch { }
   }
 
   const local = readLocalData();
@@ -700,7 +700,7 @@ export async function deleteCourier(id: string): Promise<boolean> {
   if (isMongo) {
     try {
       await CourierCompany.findByIdAndDelete(id);
-    } catch {}
+    } catch { }
   }
 
   const local = readLocalData();
@@ -747,7 +747,7 @@ export async function getBatches(filters?: {
         if (!hasFilters) dbCache.set("all_batches", parsed, "batches", 1800);
         return parsed;
       }
-    } catch {}
+    } catch { }
   }
 
   const local = readLocalData();
@@ -1304,7 +1304,7 @@ export async function getParcels(filters?: {
         if (!hasFilters) dbCache.set("all_parcels", parsed, "parcels", 1800);
         return parsed;
       }
-    } catch {}
+    } catch { }
   }
 
   let parcels = readLocalData().parcels;
@@ -1365,7 +1365,7 @@ export async function getParcelById(idOrParcelId: string): Promise<IParcel | nul
         dbCache.set(`parcel_${idOrParcelId}`, parsed, "parcels", 1800);
         return parsed;
       }
-    } catch {}
+    } catch { }
   }
 
   const parcels = readLocalData().parcels;
@@ -1437,7 +1437,7 @@ export async function updateParcelStatus(
         parcel,
         { new: true }
       );
-    } catch {}
+    } catch { }
   }
 
   return parcel;
@@ -1510,7 +1510,7 @@ export async function bulkUpdateParcelStatus(
           },
         }
       );
-    } catch {}
+    } catch { }
   }
 
   return { updatedCount: updatedParcels.length, parcels: updatedParcels };
@@ -1682,7 +1682,7 @@ export async function processReturnInward(data: {
         }
       );
       await Return.create(returnRecord);
-    } catch {}
+    } catch { }
   }
 
   return { returnRecord, updatedParcel: parcel };
@@ -1883,7 +1883,7 @@ export async function getReturns(filters?: {
         if (!hasFilters) dbCache.set("all_returns", parsed, "returns", 1800);
         return parsed;
       }
-    } catch {}
+    } catch { }
   }
 
   let returns = readLocalData().returns;
@@ -2190,8 +2190,8 @@ export async function finalizeSettlement(data: {
     remainingDue <= 0
       ? "Fully Paid"
       : totalPaymentReceived > 0
-      ? "Partially Paid"
-      : "Unpaid";
+        ? "Partially Paid"
+        : "Unpaid";
 
   let methodLabel: PaymentMethod = data.paymentMethod || "Bank Transfer";
   if (cashReceived > 0 && onlineReceived > 0) {
@@ -2311,7 +2311,7 @@ export async function finalizeSettlement(data: {
         await CourierCompany.findByIdAndUpdate(data.courierId, {
           $set: { currentBalance: remainingDue },
         });
-      } catch {}
+      } catch { }
     }
 
     return existing;
@@ -2513,7 +2513,7 @@ export async function finalizeSettlement(data: {
       await CourierCompany.findByIdAndUpdate(data.courierId, {
         $set: { currentBalance: remainingDue },
       });
-    } catch {}
+    } catch { }
   }
 
   return settlement;
@@ -2543,7 +2543,7 @@ export async function getSettlements(filters?: {
         if (!hasFilters) dbCache.set("all_settlements", parsed, "settlements", 1800);
         return parsed;
       }
-    } catch {}
+    } catch { }
   }
 
   let settlements = readLocalData().settlements;
@@ -2583,7 +2583,7 @@ export async function getSettlementById(idOrNumber: string): Promise<ISettlement
         dbCache.set(`settlement_${idOrNumber}`, parsed, "settlements", 1800);
         return parsed;
       }
-    } catch {}
+    } catch { }
   }
 
   const settlements = readLocalData().settlements;
@@ -2641,7 +2641,7 @@ export async function getSettlementWithManifest(idOrNumber: string): Promise<{
         ],
       }).lean();
       returnsList = JSON.parse(JSON.stringify(retDocs));
-    } catch {}
+    } catch { }
   }
 
   if (parcels.length === 0) {
@@ -2765,7 +2765,7 @@ export async function getPayments(filters?: {
       if (parsed.length > 0 || filters?.courierId || filters?.startDate || filters?.endDate) {
         return parsed;
       }
-    } catch {}
+    } catch { }
   }
 
   let payments = readLocalData().payments;
@@ -3160,7 +3160,7 @@ export async function getCourierLedger(
       }
       const mongoEntries = await CourierLedgerEntry.find(query).sort({ transactionDate: 1 }).lean();
       entries = JSON.parse(JSON.stringify(mongoEntries));
-    } catch {}
+    } catch { }
   }
 
   if (entries.length === 0) {
@@ -3218,7 +3218,7 @@ export async function getCompanySettings(): Promise<ICompanySettings> {
     try {
       const setting = await SystemSetting.findOne().lean();
       if (setting) settings = JSON.parse(JSON.stringify(setting));
-    } catch {}
+    } catch { }
   } else {
     settings = readLocalData().settings || DEFAULT_SETTINGS;
   }
@@ -3248,7 +3248,7 @@ export async function updateCompanySettings(
         upsert: true,
         new: true,
       });
-    } catch {}
+    } catch { }
   }
 
   dbCache.invalidateNamespace("settings");
@@ -3345,8 +3345,8 @@ export async function getDashboardStats(filters?: {
     totalDeliveryCharges,
     totalOutstanding,
     courierPerformance,
-    recentBatches: local.batches.slice(0, 5),
-    recentParcels: local.parcels.slice(0, 8),
+    recentBatches: (await getBatches()).slice(0, 5),
+    recentParcels: (await getParcels({ limit: 8 })),
   };
 
   dbCache.set(cacheKey, stats, "dashboard", 60);
@@ -3394,8 +3394,7 @@ export async function crawlAndPreWarmCache(
     }
 
     // 4. Crawl All Parcels and build Indexes
-    const local = readLocalData();
-    const parcels = local.parcels;
+    const parcels = await getParcels();
     dbCache.set("all_parcels", parcels, "parcels", 1800);
     count += parcels.length;
 
@@ -3533,7 +3532,7 @@ export async function updateUser(id: string, data: any): Promise<IUser | null> {
       }
       const updated = await User.findByIdAndUpdate(id, updateData, { new: true }).lean();
       if (updated) return JSON.parse(JSON.stringify(updated));
-    } catch {}
+    } catch { }
   }
 
   const local = readLocalData();
@@ -3710,7 +3709,7 @@ export async function updateParcelRecord(
           await Batch.findOneAndUpdate({ batchId: batch.batchId }, batch);
         }
       }
-    } catch {}
+    } catch { }
   }
 
   // Invalidate cache and update phone index
