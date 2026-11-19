@@ -39,11 +39,16 @@ export async function connectDB(): Promise<typeof mongoose> {
     return cached.conn;
   }
 
+  if (cached.conn && cached.conn.connection.readyState !== 1) {
+    cached.conn = null;
+    cached.promise = null;
+  }
+
   if (!cached.promise) {
     const opts: mongoose.ConnectOptions = {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 8000,
       socketTimeoutMS: 45000,
     };
 
@@ -54,6 +59,7 @@ export async function connectDB(): Promise<typeof mongoose> {
       })
       .catch((err) => {
         cached.promise = null;
+        cached.conn = null;
         console.error("MongoDB Connection Failed:", err.message);
         throw new Error(`Database connection failed: ${err.message}. Please check MONGODB_URI in .env.local`);
       });
@@ -64,6 +70,7 @@ export async function connectDB(): Promise<typeof mongoose> {
     return cached.conn;
   } catch (e) {
     cached.promise = null;
+    cached.conn = null;
     throw e;
   }
 }
