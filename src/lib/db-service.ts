@@ -757,23 +757,46 @@ export async function getBatchById(idOrBatchId: string): Promise<IBatch | null> 
   return found;
 }
 
-export async function getNextBatchId(courierNameOrId?: string, dateStrParam?: string): Promise<string> {
+export async function getNextBatchId(
+  courierNameOrId?: string,
+  dateStrParam?: string,
+  fallbackCourierName?: string
+): Promise<string> {
   const dateStr = dateStrParam ? dateStrParam.replace(/-/g, "") : getTodayString().replace(/-/g, "");
 
-  let prefix = "GE";
+  let resolvedName = fallbackCourierName || "";
   if (courierNameOrId) {
-    const local = readLocalData();
-    const courier = local.couriers.find(
-      (c) => c._id === courierNameOrId || c.name.toLowerCase() === courierNameOrId.toLowerCase()
-    );
-    prefix = getCourierBatchPrefix(courier ? courier.name : courierNameOrId);
+    // Check if it's already a full name
+    if (!courierNameOrId.startsWith("courier-") && !/^[0-9a-fA-F]{24}$/.test(courierNameOrId)) {
+      resolvedName = courierNameOrId;
+    } else {
+      // Lookup courier by ID (MongoDB Atlas or cache)
+      try {
+        const courier = await getCourierById(courierNameOrId);
+        if (courier?.name) {
+          resolvedName = courier.name;
+        }
+      } catch {}
+    }
   }
+
+  const prefix = getCourierBatchPrefix(resolvedName || "Google Express").toUpperCase();
 
   const batches = await getBatches();
   const todayBatches = batches.filter(
-    (b) => b.batchId && b.batchId.includes(dateStr) && b.batchId.toUpperCase().startsWith(prefix + "-")
+    (b) => b.batchId && b.batchId.toUpperCase().startsWith(`${prefix}-${dateStr}-`)
   );
-  const nextNum = String(todayBatches.length + 1).padStart(3, "0");
+
+  let maxNum = 0;
+  for (const b of todayBatches) {
+    const parts = b.batchId.split("-");
+    const num = parseInt(parts[parts.length - 1], 10);
+    if (!isNaN(num) && num > maxNum) {
+      maxNum = num;
+    }
+  }
+
+  const nextNum = String(maxNum + 1).padStart(3, "0");
   return `${prefix}-${dateStr}-${nextNum}`;
 }
 
@@ -801,7 +824,7 @@ export async function createBatchWithParcels(
 ): Promise<{ batch: IBatch; parcels: IParcel[] }> {
   const batchId =
     batchData.batchId ||
-    (await getNextBatchId(batchData.courierId || batchData.courierName, batchData.dispatchDate));
+    (await getNextBatchId(batchData.courierId, batchData.dispatchDate, batchData.courierName));
   const now = new Date().toISOString();
 
   let totalCod = 0;

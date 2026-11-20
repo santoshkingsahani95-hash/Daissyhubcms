@@ -74,6 +74,12 @@ export function generateSettlementId(): string {
 export function getCourierBatchPrefix(courierName?: string): string {
   if (!courierName) return "GE";
   const clean = courierName.trim().replace(/\(.*?\)/g, "").trim();
+
+  // If passed an ID like "courier-1732085732104" or 24-hex MongoDB ObjectId, do not treat it as a name
+  if (clean.toLowerCase().startsWith("courier-") || /^[0-9a-fA-F]{24}$/.test(clean)) {
+    return "GE";
+  }
+
   const lower = clean.toLowerCase();
 
   // Known specific courier prefixes

@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     const courierId = searchParams.get("courierId") || undefined;
     const courierName = searchParams.get("courierName") || undefined;
     const date = searchParams.get("date") || undefined;
-    const nextId = await getNextBatchId(courierId || courierName, date);
+    const nextId = await getNextBatchId(courierId, date, courierName);
     return NextResponse.json({ success: true, nextBatchId: nextId });
   }
 

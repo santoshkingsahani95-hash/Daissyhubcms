@@ -70,7 +70,15 @@ export default function BulkParcelEntryPage() {
       .then((data) => {
         if (data.success && data.couriers?.length > 0) {
           setCouriers(data.couriers);
-          setSelectedCourierId(data.couriers[0]._id);
+          const first = data.couriers[0];
+          setSelectedCourierId(first._id);
+          const initialRate = (first.defaultDeliveryCharge ?? first.defaultChargeInsideValley ?? 70).toString();
+          setRows((prev) =>
+            prev.map((row) => ({
+              ...row,
+              deliveryCharge: row.deliveryCharge && row.deliveryCharge !== "0" ? row.deliveryCharge : initialRate,
+            }))
+          );
         }
       })
       .catch(console.error);
@@ -82,21 +90,20 @@ export default function BulkParcelEntryPage() {
     const prefix = getCourierBatchPrefix(selectedCourier?.name || "Google Express");
     const datePart = (batchDate || new Date().toISOString().split("T")[0]).replace(/-/g, "");
 
+    // Immediately set clean pattern (e.g. GE-20261120-001)
+    setBatchId(`${prefix}-${datePart}-001`);
+
     if (selectedCourierId) {
-      fetch(`/api/batches?action=next-id&courierId=${encodeURIComponent(selectedCourierId)}&date=${datePart}`)
+      fetch(
+        `/api/batches?action=next-id&courierId=${encodeURIComponent(selectedCourierId)}&courierName=${encodeURIComponent(selectedCourier?.name || "")}&date=${datePart}`
+      )
         .then((res) => res.json())
         .then((data) => {
           if (data.success && data.nextBatchId) {
             setBatchId(data.nextBatchId);
-          } else {
-            setBatchId(`${prefix}-${datePart}-001`);
           }
         })
-        .catch(() => {
-          setBatchId(`${prefix}-${datePart}-001`);
-        });
-    } else {
-      setBatchId(`${prefix}-${datePart}-001`);
+        .catch(() => {});
     }
   }, [selectedCourierId, selectedCourier, batchDate, isCustomBatchId]);
 
@@ -107,10 +114,18 @@ export default function BulkParcelEntryPage() {
     }
   }, []);
 
-  // Default delivery charge is 0 (removed default 70 charge per user request)
-  const defaultCharge = 0;
+  // Delivery charge set from Courier Info Management
+  const defaultCharge = useMemo(() => {
+    if (!selectedCourier) return 70;
+    return Number(
+      selectedCourier.defaultDeliveryCharge ??
+      selectedCourier.defaultChargeInsideValley ??
+      70
+    );
+  }, [selectedCourier]);
 
   const addRows = (count: number) => {
+    const charge = defaultCharge.toString();
     const newRows: ParcelRow[] = Array.from({ length: count }, (_, i) => ({
       id: "row-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7) + "-" + i,
       customerName: "",
@@ -118,7 +133,7 @@ export default function BulkParcelEntryPage() {
       codAmount: "0",
       advancePayment: "0",
       itemSku: "",
-      deliveryCharge: "0",
+      deliveryCharge: charge,
       customerAddress: "",
       remarks: "",
     }));
@@ -137,7 +152,7 @@ export default function BulkParcelEntryPage() {
           codAmount: "0",
           advancePayment: "0",
           itemSku: "",
-          deliveryCharge: "0",
+          deliveryCharge: defaultCharge.toString(),
           customerAddress: "",
           remarks: "",
         },
@@ -328,7 +343,7 @@ export default function BulkParcelEntryPage() {
       let cod = "0";
       let advance = "0";
       let sku = "";
-      let charge = "0";
+      let charge = defaultCharge.toString();
       let address = "";
       let remarks = "";
 
@@ -360,7 +375,7 @@ export default function BulkParcelEntryPage() {
         cod = col4.replace(/[^0-9.]/g, "") || "0";
         advance = col5.replace(/[^0-9.]/g, "") || "0";
         if (col6 && !isNaN(Number(col6.replace(/[^0-9.]/g, "")))) {
-          charge = col6.replace(/[^0-9.]/g, "") || "0";
+          charge = col6.replace(/[^0-9.]/g, "") || defaultCharge.toString();
           remarks = col7;
         } else {
           remarks = col6;
@@ -494,7 +509,7 @@ export default function BulkParcelEntryPage() {
             codAmount: parseFloat(p.codAmount) || 0,
             advancePayment: parseFloat(p.advancePayment) || 0,
             itemSku: p.itemSku.trim(),
-            deliveryCharge: isNaN(parseFloat(p.deliveryCharge)) ? 0 : parseFloat(p.deliveryCharge),
+            deliveryCharge: isNaN(parseFloat(p.deliveryCharge)) ? defaultCharge : parseFloat(p.deliveryCharge),
             remarks: p.remarks.trim(),
           })),
         }),
@@ -594,14 +609,25 @@ export default function BulkParcelEntryPage() {
                   const id = e.target.value;
                   setSelectedCourierId(id);
                   setIsCustomBatchId(false);
+                  const c = couriers.find((item) => item._id === id);
+                  const rate = String(c?.defaultDeliveryCharge ?? c?.defaultChargeInsideValley ?? 70);
+                  setRows((prev) =>
+                    prev.map((row) => ({
+                      ...row,
+                      deliveryCharge: rate,
+                    }))
+                  );
                 }}
                 className="w-full text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 px-3 py-2 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all cursor-pointer"
               >
-                {couriers.map((c) => (
-                  <option key={c._id} value={c._id}>
-                    {c.name}
-                  </option>
-                ))}
+                {couriers.map((c) => {
+                  const rate = c.defaultDeliveryCharge ?? c.defaultChargeInsideValley ?? 0;
+                  return (
+                    <option key={c._id} value={c._id}>
+                      {c.name} {rate > 0 ? `(Rs. ${rate})` : ""}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           </div>
