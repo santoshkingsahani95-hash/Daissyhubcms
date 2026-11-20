@@ -270,7 +270,20 @@ export default function ParcelBatchesPage() {
             serviceArea: "Inside Valley",
             notes: editNotes,
           },
-          parcels: validRows,
+          parcels: validRows.map((p) => ({
+            _id: p._id && !p._id.startsWith("parcel-new") ? p._id : undefined,
+            parcelId: p.parcelId && !p.parcelId.startsWith("(New") ? p.parcelId : undefined,
+            customerName: p.customerName.trim(),
+            customerPhone: p.customerPhone.trim(),
+            customerAddress: p.customerAddress?.trim() || "",
+            deliveryArea: "Inside Valley",
+            itemSku: p.itemSku?.trim() || "",
+            codAmount: Number(p.codAmount) || 0,
+            advancePayment: Number(p.advancePayment) || 0,
+            deliveryCharge: Number(p.deliveryCharge) || 70,
+            remarks: p.remarks?.trim() || "",
+            status: p.status || "With Courier",
+          })),
         }),
       });
 
@@ -786,56 +799,47 @@ export default function ParcelBatchesPage() {
                   </div>
                 ) : (
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead className="bg-slate-100 dark:bg-slate-800 sticky top-0 border-b border-slate-200 dark:border-slate-700 z-10">
+                    <thead className="bg-slate-50 dark:bg-slate-800 sticky top-0 border-b border-slate-200 dark:border-slate-700 z-10">
                       <tr>
-                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 w-8 text-center">#</th>
-                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 w-28">PARCEL ID</th>
-                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 w-24 text-center">STATUS</th>
-                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[140px]">CUSTOMER NAME *</th>
-                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[120px]">MOBILE NUMBER *</th>
-                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[110px]">COD AMOUNT (RS.) *</th>
-                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[105px]">ADVANCE (RS.)</th>
-                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[90px]">CHARGE (RS.)</th>
-                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[100px]">SKU / ITEM</th>
-                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[130px]">ADDRESS</th>
-                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[100px]">REMARKS</th>
-                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 w-10 text-center">DEL</th>
+                        <th className="py-2.5 px-2 font-bold text-slate-500 dark:text-slate-400 w-12 text-center text-[11px] uppercase tracking-wider">#</th>
+                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[160px] text-[11px] uppercase tracking-wider">Customer Name <span className="text-rose-500">*</span></th>
+                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[140px] text-[11px] uppercase tracking-wider">Mobile Number <span className="text-rose-500">*</span></th>
+                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[160px] text-[11px] uppercase tracking-wider">Address / City</th>
+                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[120px] text-[11px] uppercase tracking-wider">SKU / Item</th>
+                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[110px] text-right text-[11px] uppercase tracking-wider">COD Amount (Rs.) <span className="text-rose-500">*</span></th>
+                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[105px] text-right text-[11px] uppercase tracking-wider">Advance (Rs.)</th>
+                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[95px] text-right text-[11px] uppercase tracking-wider">Charge (Rs.)</th>
+                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 min-w-[130px] text-[11px] uppercase tracking-wider">Remarks</th>
+                        <th className="py-2.5 px-2 font-bold text-slate-600 dark:text-slate-300 w-24 text-center text-[11px] uppercase tracking-wider">Status</th>
+                        <th className="py-2.5 px-2 font-bold text-slate-400 w-8 text-center">&bull;</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {editParcels.map((p, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                        <tr key={idx} className="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors">
+                          {/* S.N. and Parcel ID */}
                           <td className="py-1.5 px-2 text-center text-slate-400 font-mono text-[11px]">
-                            {idx + 1}
+                            <div className="font-semibold text-slate-700 dark:text-slate-300">{idx + 1}</div>
+                            {p.parcelId && !p.parcelId.startsWith("(New") && (
+                              <div className="text-[9px] text-blue-500 dark:text-blue-400 truncate max-w-[80px] mx-auto" title={p.parcelId}>
+                                {p.parcelId}
+                              </div>
+                            )}
                           </td>
-                          <td className="py-1.5 px-2 font-mono text-[11px] text-blue-600 dark:text-blue-400 font-semibold truncate max-w-[110px]" title={p.parcelId}>
-                            {p.parcelId}
-                          </td>
-                          <td className="py-1.5 px-2 text-center whitespace-nowrap">
-                            <span
-                              className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                p.status === "Delivered"
-                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                                  : p.status === "Returned to Warehouse"
-                                  ? "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
-                                  : p.status === "Delivery Attempt Failed"
-                                  ? "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-                                  : "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                              }`}
-                            >
-                              {p.status === "Returned to Warehouse" ? "Returned" : p.status || "With Courier"}
-                            </span>
-                          </td>
+
+                          {/* Customer Name */}
                           <td className="py-1.5 px-2">
                             <input
                               type="text"
                               value={p.customerName}
                               onChange={(e) => handleUpdateParcelField(idx, "customerName", e.target.value)}
                               placeholder="Customer Name"
-                              className="w-full px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500"
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                               required
                             />
                           </td>
+
+                          {/* Mobile Number */}
                           <td className="py-1.5 px-2 relative">
                             {(() => {
                               const pVal = (p.customerPhone || "").trim();
@@ -849,10 +853,10 @@ export default function ParcelBatchesPage() {
                                     value={p.customerPhone}
                                     onChange={(e) => handleUpdateParcelField(idx, "customerPhone", e.target.value)}
                                     placeholder="98XXXXXXXX"
-                                    className={`w-full px-2 py-1 text-xs font-mono rounded border transition-all ${
+                                    className={`w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border transition-all focus:outline-none ${
                                       isInvalid
-                                        ? "border-rose-500 bg-rose-50/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-200 ring-1 ring-rose-400 focus:border-rose-600 focus:ring-rose-500 pr-12 font-semibold"
-                                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500"
+                                        ? "border-rose-500 bg-rose-50/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-200 ring-1 ring-rose-400 pr-12 font-semibold"
+                                        : "border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                     }`}
                                     required
                                   />
@@ -868,6 +872,30 @@ export default function ParcelBatchesPage() {
                               );
                             })()}
                           </td>
+
+                          {/* Address / City */}
+                          <td className="py-1.5 px-2">
+                            <input
+                              type="text"
+                              value={p.customerAddress}
+                              onChange={(e) => handleUpdateParcelField(idx, "customerAddress", e.target.value)}
+                              placeholder="Street, Landmark, City"
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                            />
+                          </td>
+
+                          {/* SKU / Item */}
+                          <td className="py-1.5 px-2">
+                            <input
+                              type="text"
+                              value={p.itemSku}
+                              onChange={(e) => handleUpdateParcelField(idx, "itemSku", e.target.value)}
+                              placeholder="Item SKU"
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                            />
+                          </td>
+
+                          {/* COD Amount */}
                           <td className="py-1.5 px-2">
                             <input
                               type="number"
@@ -875,10 +903,12 @@ export default function ParcelBatchesPage() {
                               step="1"
                               value={p.codAmount}
                               onChange={(e) => handleUpdateParcelField(idx, "codAmount", e.target.value)}
-                              className="w-full px-2 py-1 text-xs font-mono text-right font-bold text-slate-900 dark:text-white rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-1 focus:ring-blue-500"
+                              className="w-full px-2.5 py-1.5 text-xs font-mono text-right font-bold text-slate-900 dark:text-white rounded-lg border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                               required
                             />
                           </td>
+
+                          {/* Advance */}
                           <td className="py-1.5 px-2">
                             <input
                               type="number"
@@ -886,9 +916,11 @@ export default function ParcelBatchesPage() {
                               step="1"
                               value={p.advancePayment}
                               onChange={(e) => handleUpdateParcelField(idx, "advancePayment", e.target.value)}
-                              className="w-full px-2 py-1 text-xs font-mono text-right font-semibold text-amber-600 dark:text-amber-400 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-1 focus:ring-blue-500"
+                              className="w-full px-2.5 py-1.5 text-xs font-mono text-right font-semibold text-emerald-600 dark:text-emerald-400 rounded-lg border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                             />
                           </td>
+
+                          {/* Charge */}
                           <td className="py-1.5 px-2">
                             <input
                               type="number"
@@ -896,36 +928,39 @@ export default function ParcelBatchesPage() {
                               step="1"
                               value={p.deliveryCharge}
                               onChange={(e) => handleUpdateParcelField(idx, "deliveryCharge", e.target.value)}
-                              className="w-full px-2 py-1 text-xs font-mono text-right rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500"
+                              className="w-full px-2.5 py-1.5 text-xs font-mono text-right rounded-lg border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                             />
                           </td>
-                          <td className="py-1.5 px-2">
-                            <input
-                              type="text"
-                              value={p.itemSku}
-                              onChange={(e) => handleUpdateParcelField(idx, "itemSku", e.target.value)}
-                              placeholder="SKU / Item"
-                              className="w-full px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="py-1.5 px-2">
-                            <input
-                              type="text"
-                              value={p.customerAddress}
-                              onChange={(e) => handleUpdateParcelField(idx, "customerAddress", e.target.value)}
-                              placeholder="Delivery Address"
-                              className="w-full px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500"
-                            />
-                          </td>
+
+                          {/* Remarks */}
                           <td className="py-1.5 px-2">
                             <input
                               type="text"
                               value={p.remarks}
                               onChange={(e) => handleUpdateParcelField(idx, "remarks", e.target.value)}
-                              placeholder="Notes"
-                              className="w-full px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500"
+                              placeholder="Special notes"
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                             />
                           </td>
+
+                          {/* Status */}
+                          <td className="py-1.5 px-2 text-center whitespace-nowrap">
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                                p.status === "Delivered"
+                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                                  : p.status === "Returned to Warehouse"
+                                  ? "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                                  : p.status === "Delivery Attempt Failed"
+                                  ? "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                                  : "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                              }`}
+                            >
+                              {p.status === "Returned to Warehouse" ? "Returned" : p.status || "With Courier"}
+                            </span>
+                          </td>
+
+                          {/* Delete Action */}
                           <td className="py-1.5 px-2 text-center">
                             <button
                               type="button"
@@ -933,7 +968,7 @@ export default function ParcelBatchesPage() {
                               title="Remove parcel from batch"
                               className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </td>
                         </tr>

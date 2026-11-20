@@ -997,14 +997,17 @@ export async function updateBatchWithParcels(
 
   // 1. MONGODB ATLAS PATH
   if (isMongo) {
-    try {
-      const isObjectId = /^[0-9a-fA-F]{24}$/.test(batchIdOrId);
-      const query = isObjectId
-        ? { $or: [{ _id: batchIdOrId }, { batchId: batchIdOrId }] }
-        : { batchId: new RegExp(`^${batchIdOrId}$`, "i") };
+    const query = {
+      $or: [
+        { batchId: batchIdOrId },
+        { _id: batchIdOrId },
+        { batchId: new RegExp(`^${batchIdOrId}$`, "i") },
+      ],
+    };
 
-      const mongoBatch = await Batch.findOne(query);
-      if (mongoBatch) {
+    const mongoBatch = await Batch.findOne(query);
+    if (mongoBatch) {
+      try {
         const originalCourierId = mongoBatch.courierId;
 
         // If courier is updated, lookup the courier name
@@ -1045,6 +1048,16 @@ export async function updateBatchWithParcels(
 
         const incomingIds = new Set<string>();
         const updatedBatchParcels: IParcel[] = [];
+
+        // Pre-calculate max parcel ID sequence for this date
+        const datePart = (mongoBatch.dispatchDate || getTodayString()).replace(/-/g, "");
+        const dateParcels = await Parcel.find({ parcelId: new RegExp(`^DH-${datePart}-`) }).lean();
+        let maxPNum = 0;
+        for (const p of dateParcels) {
+          const parts = p.parcelId.split("-");
+          const num = parseInt(parts[2], 10);
+          if (!isNaN(num) && num > maxPNum) maxPNum = num;
+        }
 
         for (let idx = 0; idx < validParcelsData.length; idx++) {
           const pData = validParcelsData[idx];
@@ -1129,10 +1142,12 @@ export async function updateBatchWithParcels(
             }
           } else {
             // New parcel added to batch during edit
-            const datePart = (mongoBatch.dispatchDate || getTodayString()).replace(/-/g, "");
-            const count = await Parcel.countDocuments({ batchId: mongoBatch.batchId });
-            const newPid = `DH-${datePart}-${String(count + idx + 1).padStart(3, "0")}`;
+            maxPNum += 1;
+            const newPid = `DH-${datePart}-${String(maxPNum).padStart(3, "0")}`;
+            const newId = "parcel-" + Date.now() + "-" + idx + "-" + Math.random().toString(36).substring(2, 7);
+
             const created = await Parcel.create({
+              _id: newId,
               parcelId: newPid,
               batchId: mongoBatch.batchId,
               courierId: mongoBatch.courierId,
@@ -1214,9 +1229,10 @@ export async function updateBatchWithParcels(
           batch: JSON.parse(JSON.stringify(finalBatch)),
           parcels: updatedBatchParcels,
         };
+      } catch (err: any) {
+        console.error("MongoDB updateBatchWithParcels error:", err);
+        throw new Error(`Failed to update batch in MongoDB: ${err.message || err}`);
       }
-    } catch (err: any) {
-      console.warn("MongoDB updateBatchWithParcels error:", err.message);
     }
   }
 
