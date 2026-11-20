@@ -747,6 +747,22 @@ export async function getBatchById(idOrBatchId: string): Promise<IBatch | null> 
   const cached = dbCache.get<IBatch>(`batch_${idOrBatchId}`, "batches");
   if (cached) return cached;
 
+  const isMongo = await checkMongoConnection();
+  if (isMongo) {
+    try {
+      const isObjectId = /^[0-9a-fA-F]{24}$/.test(idOrBatchId);
+      const query = isObjectId
+        ? { $or: [{ _id: idOrBatchId }, { batchId: idOrBatchId }] }
+        : { batchId: new RegExp(`^${idOrBatchId}$`, "i") };
+      const batch = await Batch.findOne(query).lean();
+      if (batch) {
+        const result = JSON.parse(JSON.stringify(batch));
+        dbCache.set(`batch_${idOrBatchId}`, result, "batches", 1800);
+        return result;
+      }
+    } catch {}
+  }
+
   const batches = await getBatches();
   const found = batches.find(
     (b) => b._id === idOrBatchId || b.batchId.toLowerCase() === idOrBatchId.toLowerCase()
@@ -976,6 +992,235 @@ export async function updateBatchWithParcels(
   }>,
   userName = "Admin"
 ): Promise<{ batch: IBatch; parcels: IParcel[] }> {
+  const isMongo = await checkMongoConnection();
+  const now = new Date().toISOString();
+
+  // 1. MONGODB ATLAS PATH
+  if (isMongo) {
+    try {
+      const isObjectId = /^[0-9a-fA-F]{24}$/.test(batchIdOrId);
+      const query = isObjectId
+        ? { $or: [{ _id: batchIdOrId }, { batchId: batchIdOrId }] }
+        : { batchId: new RegExp(`^${batchIdOrId}$`, "i") };
+
+      const mongoBatch = await Batch.findOne(query);
+      if (mongoBatch) {
+        const originalCourierId = mongoBatch.courierId;
+
+        // If courier is updated, lookup the courier name
+        if (batchData.courierId && batchData.courierId !== mongoBatch.courierId) {
+          const newCourier = await getCourierById(batchData.courierId);
+          if (newCourier) {
+            mongoBatch.courierId = newCourier._id;
+            mongoBatch.courierName = newCourier.name;
+          }
+        } else if (batchData.courierName) {
+          mongoBatch.courierName = batchData.courierName;
+        }
+
+        if (batchData.dispatchDate) mongoBatch.dispatchDate = batchData.dispatchDate;
+        if (batchData.serviceArea) mongoBatch.serviceArea = batchData.serviceArea;
+        if (batchData.notes !== undefined) mongoBatch.notes = batchData.notes;
+        if (batchData.status) mongoBatch.status = batchData.status;
+
+        // Filter valid parcels
+        const validParcelsData = parcelsData.filter(
+          (p) => p.customerName && p.customerName.trim() && p.customerPhone && p.customerPhone.trim()
+        );
+
+        // Map existing parcels in Mongo
+        const existingParcelsInMongo = await Parcel.find({ batchId: mongoBatch.batchId }).lean();
+        const existingMap = new Map<string, any>();
+        existingParcelsInMongo.forEach((p: any) => {
+          if (p.parcelId) existingMap.set(p.parcelId, p);
+          if (p._id) existingMap.set(String(p._id), p);
+        });
+
+        // Check return records in Mongo
+        const mongoReturns = await Return.find({ batchId: mongoBatch.batchId }).lean();
+        const returnSet = new Set<string>();
+        mongoReturns.forEach((r: any) => {
+          if (r.parcelId) returnSet.add(r.parcelId);
+        });
+
+        const incomingIds = new Set<string>();
+        const updatedBatchParcels: IParcel[] = [];
+
+        for (let idx = 0; idx < validParcelsData.length; idx++) {
+          const pData = validParcelsData[idx];
+          const incomingId = pData.parcelId || pData._id;
+          let existing: any = undefined;
+          if (incomingId && existingMap.has(incomingId)) {
+            existing = existingMap.get(incomingId);
+          }
+
+          const cod = Number(pData.codAmount) || 0;
+          const advance = Number(pData.advancePayment) || 0;
+          const charge = pData.deliveryCharge !== undefined ? Number(pData.deliveryCharge) : 70;
+
+          if (existing) {
+            incomingIds.add(existing.parcelId);
+            incomingIds.add(String(existing._id));
+
+            const isActuallyReturned =
+              existing.status === "Returned to Warehouse" ||
+              returnSet.has(existing.parcelId);
+
+            let newStatus = existing.status;
+            let statusHistory = existing.statusHistory ? [...existing.statusHistory] : [];
+
+            if (isActuallyReturned) {
+              newStatus = "Returned to Warehouse";
+              if (existing.codAmount !== cod) {
+                statusHistory.push({
+                  previousStatus: "Returned to Warehouse",
+                  newStatus: "Returned to Warehouse",
+                  timestamp: now,
+                  updatedBy: userName,
+                  remarks: `COD amount updated to Rs. ${cod} (Returned)`,
+                });
+              }
+            } else if (pData.status && pData.status !== existing.status) {
+              statusHistory.push({
+                previousStatus: existing.status,
+                newStatus: pData.status,
+                timestamp: now,
+                updatedBy: userName,
+                remarks: `Updated during batch edit`,
+              });
+              newStatus = pData.status;
+            } else if (existing.codAmount !== cod) {
+              statusHistory.push({
+                previousStatus: existing.status,
+                newStatus: existing.status,
+                timestamp: now,
+                updatedBy: userName,
+                remarks: `COD amount updated to Rs. ${cod}`,
+              });
+            }
+
+            const updatedDoc = await Parcel.findOneAndUpdate(
+              { $or: [{ parcelId: existing.parcelId }, { _id: existing._id }] },
+              {
+                $set: {
+                  customerName: pData.customerName.trim(),
+                  customerPhone: pData.customerPhone.trim(),
+                  customerAddress: pData.customerAddress?.trim() || "",
+                  deliveryArea: "Inside Valley",
+                  itemSku: pData.itemSku?.trim() || "",
+                  codAmount: cod,
+                  advancePayment: advance,
+                  totalOrderValue: cod + advance,
+                  deliveryCharge: charge,
+                  remarks: pData.remarks?.trim() || "",
+                  courierId: mongoBatch.courierId,
+                  courierName: mongoBatch.courierName,
+                  dispatchDate: mongoBatch.dispatchDate,
+                  status: newStatus,
+                  statusHistory,
+                  updatedAt: now,
+                },
+              },
+              { new: true }
+            ).lean();
+
+            if (updatedDoc) {
+              updatedBatchParcels.push(JSON.parse(JSON.stringify(updatedDoc)));
+            }
+          } else {
+            // New parcel added to batch during edit
+            const datePart = (mongoBatch.dispatchDate || getTodayString()).replace(/-/g, "");
+            const count = await Parcel.countDocuments({ batchId: mongoBatch.batchId });
+            const newPid = `DH-${datePart}-${String(count + idx + 1).padStart(3, "0")}`;
+            const created = await Parcel.create({
+              parcelId: newPid,
+              batchId: mongoBatch.batchId,
+              courierId: mongoBatch.courierId,
+              courierName: mongoBatch.courierName,
+              customerName: pData.customerName.trim(),
+              customerPhone: pData.customerPhone.trim(),
+              customerAddress: pData.customerAddress?.trim() || "",
+              deliveryArea: "Inside Valley",
+              itemSku: pData.itemSku?.trim() || "",
+              codAmount: cod,
+              advancePayment: advance,
+              totalOrderValue: cod + advance,
+              deliveryCharge: charge,
+              remarks: pData.remarks?.trim() || "",
+              status: pData.status || "With Courier",
+              dispatchDate: mongoBatch.dispatchDate,
+              statusHistory: [
+                {
+                  previousStatus: undefined,
+                  newStatus: pData.status || "With Courier",
+                  timestamp: now,
+                  updatedBy: userName,
+                  remarks: `Added during batch edit`,
+                },
+              ],
+              isSettled: false,
+              createdAt: now,
+              updatedAt: now,
+            });
+
+            const createdJson = JSON.parse(JSON.stringify(created));
+            incomingIds.add(createdJson.parcelId);
+            incomingIds.add(String(createdJson._id));
+            updatedBatchParcels.push(createdJson);
+          }
+        }
+
+        // Remove any parcels previously in the batch that were removed by user (unless settled)
+        const removedParcels = existingParcelsInMongo.filter(
+          (p: any) => !incomingIds.has(p.parcelId) && !incomingIds.has(String(p._id)) && !p.isSettled
+        );
+        if (removedParcels.length > 0) {
+          const removedIds = removedParcels.map((p: any) => p.parcelId);
+          await Parcel.deleteMany({ batchId: mongoBatch.batchId, parcelId: { $in: removedIds } });
+          await Return.deleteMany({ parcelId: { $in: removedIds } });
+        }
+
+        await mongoBatch.save();
+
+        // Sync batch counts in MongoDB
+        await syncBatchCountsMongo(mongoBatch.batchId);
+
+        // Sync courier stats in MongoDB
+        await syncCourierStatsMongo(mongoBatch.courierId);
+        if (originalCourierId !== mongoBatch.courierId) {
+          await syncCourierStatsMongo(originalCourierId);
+        }
+
+        // Invalidate caches
+        dbCache.invalidateNamespace("batches");
+        dbCache.invalidateNamespace("parcels");
+        dbCache.invalidateNamespace("dashboard");
+        dbCache.invalidateNamespace("couriers");
+        dbCache.invalidateNamespace("customers");
+
+        for (const p of updatedBatchParcels) {
+          if (p.customerPhone) {
+            dbCache.setCustomerPhone(p.customerPhone, {
+              name: p.customerName || "",
+              address: p.customerAddress || "",
+              deliveryArea: p.deliveryArea || "Inside Valley",
+              lastParcelId: p.parcelId,
+            });
+          }
+        }
+
+        const finalBatch = await Batch.findOne({ batchId: mongoBatch.batchId }).lean();
+        return {
+          batch: JSON.parse(JSON.stringify(finalBatch)),
+          parcels: updatedBatchParcels,
+        };
+      }
+    } catch (err: any) {
+      console.warn("MongoDB updateBatchWithParcels error:", err.message);
+    }
+  }
+
+  // 2. LOCAL DATA FALLBACK PATH
   const local = readLocalData();
   const batchIdx = local.batches.findIndex(
     (b) => b.batchId === batchIdOrId || b._id === batchIdOrId
@@ -986,7 +1231,6 @@ export async function updateBatchWithParcels(
 
   const batch = local.batches[batchIdx];
   const originalCourierId = batch.courierId;
-  const now = new Date().toISOString();
 
   // If courier is updated, lookup the courier name
   if (batchData.courierId && batchData.courierId !== batch.courierId) {
@@ -1161,7 +1405,6 @@ export async function updateBatchWithParcels(
   writeLocalData(local);
 
   // Update MongoDB if connected
-  const isMongo = await checkMongoConnection();
   if (isMongo) {
     try {
       await Batch.findOneAndUpdate({ batchId: batch.batchId }, batch, { new: true });
