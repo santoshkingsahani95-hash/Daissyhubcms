@@ -153,8 +153,8 @@ export default function DashboardPage() {
         ) : null}
       </div>
 
-      {/* 7 Required Primary KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+      {/* 6 Required Primary KPI Cards (Pending / In Transit removed as requested) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {/* Dispatched Today */}
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
@@ -186,17 +186,6 @@ export default function DashboardPage() {
             {stats?.totalReturned ?? 0}
           </p>
           <span className="text-[10px] text-rose-700/80 mt-1 block">Inward warehouse</span>
-        </div>
-
-        {/* Pending Parcels */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-950 shadow-sm">
-          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider block">
-            Pending / In Transit
-          </span>
-          <p className="text-2xl font-black text-blue-600 mt-1">
-            {stats?.pendingParcels ?? 0}
-          </p>
-          <span className="text-[10px] text-blue-700/80 mt-1 block">With couriers</span>
         </div>
 
         {/* Total COD Collected */}

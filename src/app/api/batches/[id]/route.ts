@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAuthAndPermission } from "@/lib/auth";
-import { getBatchById, getParcels, updateBatchWithParcels } from "@/lib/db-service";
+import { getBatchById, getParcels, updateBatchWithParcels, deleteBatch } from "@/lib/db-service";
 
 export async function GET(
   req: NextRequest,
@@ -57,6 +57,27 @@ export async function PUT(
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Error updating batch";
     return NextResponse.json({ success: false, message }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const { user, errorResponse } = await checkAuthAndPermission(req, "parcels:create");
+  if (errorResponse) return errorResponse;
+
+  try {
+    const result = await deleteBatch(params.id, user?.name || "Admin");
+    return NextResponse.json({
+      success: true,
+      message: `Batch ${result.batchId} and ${result.deletedParcelsCount} parcel(s) deleted successfully.`,
+      batchId: result.batchId,
+      deletedParcelsCount: result.deletedParcelsCount,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Error deleting batch";
+    return NextResponse.json({ success: false, message }, { status: 400 });
   }
 }
 

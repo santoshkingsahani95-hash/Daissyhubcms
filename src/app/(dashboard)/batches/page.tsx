@@ -77,6 +77,31 @@ export default function ParcelBatchesPage() {
   const [returnModalParcels, setReturnModalParcels] = useState<IParcel[]>([]);
   const [showBatchReturnsModal, setShowBatchReturnsModal] = useState(false);
 
+  // Delete Batch State
+  const [deleteBatchTarget, setDeleteBatchTarget] = useState<IBatch | null>(null);
+  const [deletingBatch, setDeletingBatch] = useState(false);
+
+  const handleConfirmDeleteBatch = async () => {
+    if (!deleteBatchTarget) return;
+    setDeletingBatch(true);
+    try {
+      const res = await fetch(`/api/batches/${encodeURIComponent(deleteBatchTarget.batchId)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to delete batch");
+      }
+      toast.success(`Batch ${deleteBatchTarget.batchId} deleted successfully!`);
+      setDeleteBatchTarget(null);
+      fetchBatches();
+    } catch (err: any) {
+      toast.error(err.message || "Error deleting batch");
+    } finally {
+      setDeletingBatch(false);
+    }
+  };
+
   const handleViewBatchReturns = (batch: IBatch) => {
     setReturnModalBatch(batch);
     setReturnModalParcels([]);
@@ -499,6 +524,14 @@ export default function ParcelBatchesPage() {
                           <span>Reconcile</span>
                         </button>
                       </Link>
+                      <button
+                        onClick={() => setDeleteBatchTarget(batch)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-300 transition-colors border border-rose-200 dark:border-rose-800/60"
+                        title="Delete Batch & its parcels permanently"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -951,6 +984,45 @@ export default function ParcelBatchesPage() {
         courierName={returnModalBatch?.courierName || ""}
         parcels={returnModalParcels}
       />
+
+      {/* Delete Batch Confirmation Modal */}
+      {deleteBatchTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-900/40 text-rose-600 flex items-center justify-center mb-4">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">
+              Delete Batch {deleteBatchTarget.batchId}?
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
+              Are you sure you want to delete batch <strong>{deleteBatchTarget.batchId}</strong> ({deleteBatchTarget.courierName})?
+              This will permanently delete the batch entry and all{" "}
+              <strong>{deleteBatchTarget.totalParcels} parcel(s)</strong> belonging to it from MongoDB database.
+              This action cannot be undone.
+            </p>
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setDeleteBatchTarget(null)}
+                disabled={deletingBatch}
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteBatch}
+                disabled={deletingBatch}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white shadow-md shadow-rose-500/20 transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{deletingBatch ? "Deleting..." : "Confirm Delete"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

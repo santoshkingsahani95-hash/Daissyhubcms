@@ -8,13 +8,15 @@ import {
   Trash2,
   ClipboardPaste,
   Save,
-  AlertTriangle,
   Upload,
-  CheckCircle2,
-  FileSpreadsheet,
-  Info,
-  Calendar,
   Sparkles,
+  Truck,
+  Calendar,
+  Hash,
+  FileText,
+  CheckCircle2,
+  Eraser,
+  HelpCircle,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { ICourierCompany } from "@/types";
@@ -105,14 +107,10 @@ export default function BulkParcelEntryPage() {
     }
   }, []);
 
-  // Update default delivery charge from selected courier
-  const defaultCharge = useMemo(() => {
-    if (!selectedCourier) return 70;
-    return selectedCourier.defaultDeliveryCharge || selectedCourier.defaultChargeInsideValley || 70;
-  }, [selectedCourier]);
+  // Default delivery charge is 0 (removed default 70 charge per user request)
+  const defaultCharge = 0;
 
   const addRows = (count: number) => {
-    const charge = defaultCharge.toString();
     const newRows: ParcelRow[] = Array.from({ length: count }, (_, i) => ({
       id: "row-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7) + "-" + i,
       customerName: "",
@@ -120,11 +118,35 @@ export default function BulkParcelEntryPage() {
       codAmount: "0",
       advancePayment: "0",
       itemSku: "",
-      deliveryCharge: charge,
+      deliveryCharge: "0",
       customerAddress: "",
       remarks: "",
     }));
     setRows((prev) => [...prev, ...newRows]);
+  };
+
+  const clearEmptyRows = () => {
+    const filled = rows.filter((r) => r.customerName.trim() || r.customerPhone.trim());
+    if (filled.length === 0) {
+      // Keep 1 clean blank row
+      setRows([
+        {
+          id: "row-" + Date.now(),
+          customerName: "",
+          customerPhone: "",
+          codAmount: "0",
+          advancePayment: "0",
+          itemSku: "",
+          deliveryCharge: "0",
+          customerAddress: "",
+          remarks: "",
+        },
+      ]);
+      toast.success("Table reset to 1 blank row");
+    } else {
+      setRows(filled);
+      toast.success(`Cleaned empty rows. ${filled.length} active row(s) remaining.`);
+    }
   };
 
   const updateRow = (index: number, field: keyof ParcelRow, value: string) => {
@@ -306,7 +328,7 @@ export default function BulkParcelEntryPage() {
       let cod = "0";
       let advance = "0";
       let sku = "";
-      let charge = defaultCharge.toString();
+      let charge = "0";
       let address = "";
       let remarks = "";
 
@@ -338,7 +360,7 @@ export default function BulkParcelEntryPage() {
         cod = col4.replace(/[^0-9.]/g, "") || "0";
         advance = col5.replace(/[^0-9.]/g, "") || "0";
         if (col6 && !isNaN(Number(col6.replace(/[^0-9.]/g, "")))) {
-          charge = col6.replace(/[^0-9.]/g, "") || defaultCharge.toString();
+          charge = col6.replace(/[^0-9.]/g, "") || "0";
           remarks = col7;
         } else {
           remarks = col6;
@@ -472,7 +494,7 @@ export default function BulkParcelEntryPage() {
             codAmount: parseFloat(p.codAmount) || 0,
             advancePayment: parseFloat(p.advancePayment) || 0,
             itemSku: p.itemSku.trim(),
-            deliveryCharge: parseFloat(p.deliveryCharge) || defaultCharge,
+            deliveryCharge: isNaN(parseFloat(p.deliveryCharge)) ? 0 : parseFloat(p.deliveryCharge),
             remarks: p.remarks.trim(),
           })),
         }),
@@ -498,28 +520,33 @@ export default function BulkParcelEntryPage() {
   };
 
   return (
-    <div className="space-y-4 pb-28">
+    <div className="space-y-4 pb-36">
       {/* Top Header Card */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded-md bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800">
-                Fast Paced Entry
-              </span>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-                Bulk Parcel Entry
-              </h1>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 flex items-center justify-center font-bold">
+              <Boxes className="w-5 h-5" />
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Enter 100+ parcels continuously using Tab or Enter keys, or paste directly from Excel &bull; Mobile number is unique customer ID (Multiple parcels per mobile supported)
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Bulk Parcel Entry
+                </h1>
+                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800">
+                  Fast Paced
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Fast spreadsheet entry &bull; Paste directly from Excel &bull; Auto customer lookup by 10-digit mobile
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setShowPasteModal(true)}
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-sm transition-all"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-xs transition-all"
             >
               <ClipboardPaste className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
               <span>Paste from Excel</span>
@@ -527,10 +554,10 @@ export default function BulkParcelEntryPage() {
 
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-sm transition-all"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-xs transition-all"
             >
               <Upload className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Import File</span>
+              <span>Import CSV</span>
             </button>
             <input
               type="file"
@@ -543,7 +570,7 @@ export default function BulkParcelEntryPage() {
             <button
               onClick={handleSaveBatch}
               disabled={saving || validRows.length === 0}
-              className="inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white shadow-md shadow-blue-500/20 transition-all"
+              className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white shadow-md shadow-blue-500/20 transition-all"
             >
               <Save className="w-3.5 h-3.5" />
               <span>{saving ? "Saving..." : `Save Batch (${validRows.length})`}</span>
@@ -552,11 +579,13 @@ export default function BulkParcelEntryPage() {
         </div>
 
         {/* Batch Metadata Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80">
           {/* Courier Service */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-              Courier Service <span className="text-rose-500">*</span>
+            <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              <Truck className="w-3.5 h-3.5 text-blue-600" />
+              <span>Courier Partner</span>
+              <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <select
@@ -565,40 +594,30 @@ export default function BulkParcelEntryPage() {
                   const id = e.target.value;
                   setSelectedCourierId(id);
                   setIsCustomBatchId(false);
-                  const c = couriers.find((item) => item._id === id);
-                  const newRate = (c?.defaultDeliveryCharge || c?.defaultChargeInsideValley || 70).toString();
-                  setRows((prev) =>
-                    prev.map((row) => ({
-                      ...row,
-                      deliveryCharge: row.deliveryCharge ? newRate : row.deliveryCharge,
-                    }))
-                  );
                 }}
-                className="w-full text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 px-3 py-2 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 px-3 py-2 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all cursor-pointer"
               >
-                {couriers.map((c) => {
-                  const rate = c.defaultDeliveryCharge || c.defaultChargeInsideValley || 70;
-                  return (
-                    <option key={c._id} value={c._id}>
-                      {c.name} (Rs. {rate})
-                    </option>
-                  );
-                })}
+                {couriers.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
           {/* Batch Date */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-              Batch Date
+            <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+              <span>Batch Date</span>
             </label>
             <div className="relative">
               <input
                 type="date"
                 value={batchDate}
                 onChange={(e) => setBatchDate(e.target.value)}
-                className="w-full text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 px-3 py-2 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 px-3 py-2 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
               />
             </div>
           </div>
@@ -606,96 +625,106 @@ export default function BulkParcelEntryPage() {
           {/* Batch Code / Number (Manual or Auto) */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                Batch Code / Number <span className="text-rose-500">*</span>
+              <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                <Hash className="w-3.5 h-3.5 text-slate-500" />
+                <span>Batch Code</span>
+                <span className="text-rose-500">*</span>
               </label>
               <button
                 type="button"
-                onClick={() => {
-                  if (isCustomBatchId) {
-                    setIsCustomBatchId(false);
-                  } else {
-                    setIsCustomBatchId(true);
-                  }
-                }}
-                className={`text-[10px] font-medium px-2 py-0.5 rounded border transition-all ${
+                onClick={() => setIsCustomBatchId(!isCustomBatchId)}
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${
                   isCustomBatchId
-                    ? "bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800"
-                    : "bg-blue-50 text-blue-600 border-blue-200/60 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-800 hover:bg-blue-100"
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300"
+                    : "bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 hover:bg-blue-100"
                 }`}
-                title="Click to toggle between auto-generated courier prefix or manual custom batch code"
+                title="Toggle Auto or Manual Custom Batch ID"
               >
-                {isCustomBatchId ? "Custom (Click for Auto)" : "Auto-Generated (Courier Prefix)"}
+                {isCustomBatchId ? "Custom" : "Auto Prefix"}
               </button>
             </div>
             <div className="relative">
               <input
                 type="text"
-                placeholder="e.g. GE-20261106-001, SE-20261106-001"
+                placeholder="e.g. GE-20261120-001"
                 value={batchId}
                 onChange={(e) => {
                   setIsCustomBatchId(true);
                   setBatchId(e.target.value);
                 }}
-                className="w-full text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs transition-all"
+                className="w-full text-xs font-mono font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs transition-all"
               />
             </div>
           </div>
 
           {/* Batch Notes */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-              Batch Notes
+            <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              <FileText className="w-3.5 h-3.5 text-slate-500" />
+              <span>Batch Notes (Optional)</span>
             </label>
             <input
               type="text"
               placeholder="e.g. Afternoon dispatch, Cotton hoodies"
               value={batchNotes}
               onChange={(e) => setBatchNotes(e.target.value)}
-              className="w-full text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 px-3 py-2 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              className="w-full text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 px-3 py-2 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
             />
           </div>
         </div>
       </div>
 
-      {/* Row Control Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+      {/* Row Control Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 px-4 py-2.5 shadow-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1">
             Add Rows:
           </span>
           <button
             onClick={() => addRows(1)}
-            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
           >
-            +1 Row
+            <Plus className="w-3.5 h-3.5" />
+            <span>1 Row</span>
           </button>
           <button
             onClick={() => addRows(10)}
-            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
           >
-            +10 Rows
+            <Plus className="w-3.5 h-3.5" />
+            <span>10 Rows</span>
           </button>
           <button
             onClick={() => addRows(50)}
-            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
           >
-            +50 Rows
+            <Plus className="w-3.5 h-3.5" />
+            <span>50 Rows</span>
           </button>
           <button
             onClick={() => addRows(100)}
-            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
           >
-            +100 Rows
+            <Plus className="w-3.5 h-3.5" />
+            <span>100 Rows</span>
+          </button>
+
+          <button
+            onClick={clearEmptyRows}
+            title="Remove unfilled empty rows"
+            className="inline-flex items-center gap-1.5 ml-2 px-3 py-1.5 text-xs font-medium rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <Eraser className="w-3.5 h-3.5" />
+            <span>Clean Empty</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-4 text-xs">
-          <div className="text-slate-500 dark:text-slate-400 font-medium">
-            Total Rows in Table: <span className="font-bold text-slate-900 dark:text-white">{rows.length}</span>
+        <div className="flex items-center gap-3 text-xs">
+          <div className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
+            Total Rows: <span className="font-bold text-slate-900 dark:text-white">{rows.length}</span>
           </div>
-          <div className="text-slate-500 dark:text-slate-400 font-medium">
-            Filled: <span className="font-bold text-blue-600 dark:text-blue-400">{validRows.length}</span>
+          <div className="px-3 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-medium">
+            Filled: <span className="font-bold">{validRows.length}</span>
           </div>
         </div>
       </div>
@@ -704,37 +733,37 @@ export default function BulkParcelEntryPage() {
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
         <div className="overflow-x-auto max-h-[620px] overflow-y-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-slate-50/90 dark:bg-slate-800/90 sticky top-0 z-10 border-b border-slate-200 dark:border-slate-700">
+            <thead className="bg-slate-50 dark:bg-slate-800/90 sticky top-0 z-10 border-b border-slate-200 dark:border-slate-700">
               <tr>
-                <th className="py-2.5 px-3 w-12 font-bold text-slate-600 dark:text-slate-300 text-center">
-                  S.N.
+                <th className="py-3 px-3 w-12 font-bold text-slate-500 dark:text-slate-400 text-center tracking-wider uppercase text-[11px]">
+                  #
                 </th>
-                <th className="py-2.5 px-3 min-w-[170px] font-bold text-slate-600 dark:text-slate-300">
-                  CUSTOMER NAME <span className="text-rose-500">*</span>
+                <th className="py-3 px-3 min-w-[180px] font-bold text-slate-600 dark:text-slate-300 tracking-wider uppercase text-[11px]">
+                  Customer Name <span className="text-rose-500">*</span>
                 </th>
-                <th className="py-2.5 px-3 min-w-[140px] font-bold text-slate-600 dark:text-slate-300">
-                  MOBILE NUMBER <span className="text-rose-500">*</span>
+                <th className="py-3 px-3 min-w-[150px] font-bold text-slate-600 dark:text-slate-300 tracking-wider uppercase text-[11px]">
+                  Mobile Number <span className="text-rose-500">*</span>
                 </th>
-                <th className="py-2.5 px-3 min-w-[180px] font-bold text-slate-600 dark:text-slate-300">
-                  ADDRESS
+                <th className="py-3 px-3 min-w-[190px] font-bold text-slate-600 dark:text-slate-300 tracking-wider uppercase text-[11px]">
+                  Address / City
                 </th>
-                <th className="py-2.5 px-3 min-w-[125px] font-bold text-slate-600 dark:text-slate-300">
-                  SKU / ITEM
+                <th className="py-3 px-3 min-w-[130px] font-bold text-slate-600 dark:text-slate-300 tracking-wider uppercase text-[11px]">
+                  SKU / Item
                 </th>
-                <th className="py-2.5 px-3 min-w-[125px] font-bold text-slate-600 dark:text-slate-300">
-                  COD AMOUNT (RS.) <span className="text-rose-500">*</span>
+                <th className="py-3 px-3 min-w-[130px] font-bold text-slate-600 dark:text-slate-300 tracking-wider uppercase text-[11px] text-right">
+                  COD Amount (Rs.) <span className="text-rose-500">*</span>
                 </th>
-                <th className="py-2.5 px-3 min-w-[110px] font-bold text-slate-600 dark:text-slate-300">
-                  ADVANCE (RS.)
+                <th className="py-3 px-3 min-w-[120px] font-bold text-slate-600 dark:text-slate-300 tracking-wider uppercase text-[11px] text-right">
+                  Advance (Rs.)
                 </th>
-                <th className="py-2.5 px-3 min-w-[95px] font-bold text-slate-600 dark:text-slate-300">
-                  CHARGE (RS.)
+                <th className="py-3 px-3 min-w-[110px] font-bold text-slate-600 dark:text-slate-300 tracking-wider uppercase text-[11px] text-right">
+                  Charge (Rs.)
                 </th>
-                <th className="py-2.5 px-3 min-w-[140px] font-bold text-slate-600 dark:text-slate-300">
-                  REMARKS
+                <th className="py-3 px-3 min-w-[150px] font-bold text-slate-600 dark:text-slate-300 tracking-wider uppercase text-[11px]">
+                  Remarks
                 </th>
-                <th className="py-2.5 px-2 w-10 font-bold text-slate-600 dark:text-slate-300 text-center">
-                  DEL
+                <th className="py-3 px-2 w-10 font-bold text-slate-400 text-center">
+                  &bull;
                 </th>
               </tr>
             </thead>
@@ -744,15 +773,15 @@ export default function BulkParcelEntryPage() {
                 return (
                   <tr
                     key={row.id}
-                    className="hover:bg-blue-50/30 dark:hover:bg-slate-800/50 transition-colors group"
+                    className="hover:bg-blue-50/40 dark:hover:bg-slate-800/50 transition-colors group"
                   >
                     {/* S.N. */}
-                    <td className="py-1 px-3 text-center text-slate-400 font-mono select-none">
+                    <td className="py-1.5 px-3 text-center text-slate-400 font-mono select-none text-[11px]">
                       {idx + 1}
                     </td>
 
                     {/* Customer Name */}
-                    <td className="py-1 px-2">
+                    <td className="py-1.5 px-2">
                       <input
                         id={`cell-${idx}-0`}
                         type="text"
@@ -760,17 +789,17 @@ export default function BulkParcelEntryPage() {
                         value={row.customerName}
                         onChange={(e) => updateRow(idx, "customerName", e.target.value)}
                         onKeyDown={(e) => handleKeyDown(e, idx, 0)}
-                        className="w-full px-2 py-1.5 text-xs rounded-lg border border-transparent hover:border-slate-200 focus:border-blue-500 bg-transparent focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none transition-all"
+                        className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200/70 dark:border-slate-700/70 bg-white/70 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none transition-all"
                       />
                     </td>
 
                     {/* Mobile Number */}
-                    <td className="py-1 px-2 relative">
+                    <td className="py-1.5 px-2 relative">
                       {(() => {
                         const phoneVal = row.customerPhone.trim();
                         const isInvalidPhone = phoneVal.length > 0 && phoneVal.length !== 10;
                         return (
-                          <>
+                          <div className="relative">
                             <input
                               id={`cell-${idx}-1`}
                               type="text"
@@ -780,38 +809,38 @@ export default function BulkParcelEntryPage() {
                               value={row.customerPhone}
                               onChange={(e) => updateRow(idx, "customerPhone", e.target.value)}
                               onKeyDown={(e) => handleKeyDown(e, idx, 1)}
-                              className={`w-full px-2 py-1.5 text-xs rounded-lg border font-mono transition-all focus:outline-none ${
+                              className={`w-full px-2.5 py-1.5 text-xs rounded-lg border font-mono transition-all focus:outline-none ${
                                 isInvalidPhone
-                                  ? "border-rose-500 bg-rose-50/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-200 ring-1 ring-rose-400 focus:border-rose-600 focus:ring-rose-500 pr-12 font-semibold"
+                                  ? "border-rose-400 bg-rose-50/60 dark:bg-rose-950/40 text-rose-700 dark:text-rose-200 ring-1 ring-rose-400 pr-12 font-semibold"
                                   : isDup
-                                  ? "border-amber-400 bg-amber-50/30 text-amber-900 dark:text-amber-200 pr-14"
-                                  : "border-transparent hover:border-slate-200 focus:border-blue-500 bg-transparent focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                                  ? "border-amber-400 bg-amber-50/40 text-amber-900 dark:text-amber-200 pr-14"
+                                  : "border-slate-200/70 dark:border-slate-700/70 bg-white/70 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600"
                               }`}
                             />
                             {isInvalidPhone && (
                               <span
-                                title={`Mobile number must be exactly 10 digits (${phoneVal.length}/10)`}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-700/60 flex items-center select-none pointer-events-none"
+                                title={`Mobile number must be 10 digits (${phoneVal.length}/10)`}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-700/60 select-none pointer-events-none"
                               >
                                 {phoneVal.length}/10
                               </span>
                             )}
                             {!isInvalidPhone && isDup && (
                               <span
-                                title="Same mobile used for multiple parcels (Allowed)"
-                                className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/90 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 flex items-center gap-1 cursor-help shadow-xs"
+                                title="Same mobile used for multiple parcels in this batch"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/90 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 flex items-center gap-1 cursor-help"
                               >
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                                 MULTI
                               </span>
                             )}
-                          </>
+                          </div>
                         );
                       })()}
                     </td>
 
-                    {/* Address (Next to Mobile Number) */}
-                    <td className="py-1 px-2">
+                    {/* Address */}
+                    <td className="py-1.5 px-2">
                       <input
                         id={`cell-${idx}-2`}
                         type="text"
@@ -819,12 +848,12 @@ export default function BulkParcelEntryPage() {
                         value={row.customerAddress}
                         onChange={(e) => updateRow(idx, "customerAddress", e.target.value)}
                         onKeyDown={(e) => handleKeyDown(e, idx, 2)}
-                        className="w-full px-2 py-1.5 text-xs rounded-lg border border-transparent hover:border-slate-200 focus:border-blue-500 bg-transparent focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none transition-all"
+                        className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200/70 dark:border-slate-700/70 bg-white/70 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none transition-all"
                       />
                     </td>
 
-                    {/* SKU / Item (After Address) */}
-                    <td className="py-1 px-2">
+                    {/* SKU / Item */}
+                    <td className="py-1.5 px-2">
                       <input
                         id={`cell-${idx}-3`}
                         type="text"
@@ -832,12 +861,12 @@ export default function BulkParcelEntryPage() {
                         value={row.itemSku}
                         onChange={(e) => updateRow(idx, "itemSku", e.target.value)}
                         onKeyDown={(e) => handleKeyDown(e, idx, 3)}
-                        className="w-full px-2 py-1.5 text-xs rounded-lg border border-transparent hover:border-slate-200 focus:border-blue-500 bg-transparent focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none transition-all"
+                        className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200/70 dark:border-slate-700/70 bg-white/70 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none transition-all"
                       />
                     </td>
 
-                    {/* COD Amount (After SKU) */}
-                    <td className="py-1 px-2">
+                    {/* COD Amount */}
+                    <td className="py-1.5 px-2">
                       <input
                         id={`cell-${idx}-4`}
                         type="number"
@@ -846,12 +875,12 @@ export default function BulkParcelEntryPage() {
                         value={row.codAmount}
                         onChange={(e) => updateRow(idx, "codAmount", e.target.value)}
                         onKeyDown={(e) => handleKeyDown(e, idx, 4)}
-                        className="w-full px-2 py-1.5 text-xs font-semibold rounded-lg border border-transparent hover:border-slate-200 focus:border-blue-500 bg-transparent focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none text-right transition-all font-mono"
+                        className="w-full px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200/70 dark:border-slate-700/70 bg-white/70 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none text-right transition-all font-mono"
                       />
                     </td>
 
-                    {/* Advance Payment (After COD) */}
-                    <td className="py-1 px-2">
+                    {/* Advance Payment */}
+                    <td className="py-1.5 px-2">
                       <input
                         id={`cell-${idx}-5`}
                         type="number"
@@ -860,25 +889,26 @@ export default function BulkParcelEntryPage() {
                         value={row.advancePayment}
                         onChange={(e) => updateRow(idx, "advancePayment", e.target.value)}
                         onKeyDown={(e) => handleKeyDown(e, idx, 5)}
-                        className="w-full px-2 py-1.5 text-xs font-semibold rounded-lg border border-transparent hover:border-slate-200 focus:border-emerald-500 bg-transparent focus:bg-white dark:focus:bg-slate-800 text-emerald-600 dark:text-emerald-400 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none text-right transition-all font-mono"
+                        className="w-full px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-200/70 dark:border-slate-700/70 bg-white/70 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-emerald-600 dark:text-emerald-400 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none text-right transition-all font-mono"
                       />
                     </td>
 
-                    {/* Charge (Rs.) */}
-                    <td className="py-1 px-2">
+                    {/* Delivery Charge (Default 0, editable) */}
+                    <td className="py-1.5 px-2">
                       <input
                         id={`cell-${idx}-6`}
                         type="number"
                         min="0"
+                        placeholder="0"
                         value={row.deliveryCharge}
                         onChange={(e) => updateRow(idx, "deliveryCharge", e.target.value)}
                         onKeyDown={(e) => handleKeyDown(e, idx, 6)}
-                        className="w-full px-2 py-1.5 text-xs rounded-lg border border-transparent hover:border-slate-200 focus:border-blue-500 bg-transparent focus:bg-white dark:focus:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none text-right transition-all font-mono"
+                        className="w-full px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-200/70 dark:border-slate-700/70 bg-white/70 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-700 dark:text-slate-300 focus:outline-none text-right transition-all font-mono"
                       />
                     </td>
 
                     {/* Remarks */}
-                    <td className="py-1 px-2">
+                    <td className="py-1.5 px-2">
                       <input
                         id={`cell-${idx}-7`}
                         type="text"
@@ -886,12 +916,12 @@ export default function BulkParcelEntryPage() {
                         value={row.remarks}
                         onChange={(e) => updateRow(idx, "remarks", e.target.value)}
                         onKeyDown={(e) => handleKeyDown(e, idx, 7)}
-                        className="w-full px-2 py-1.5 text-xs rounded-lg border border-transparent hover:border-slate-200 focus:border-blue-500 bg-transparent focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none transition-all"
+                        className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200/70 dark:border-slate-700/70 bg-white/70 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none transition-all"
                       />
                     </td>
 
                     {/* Delete Action */}
-                    <td className="py-1 px-2 text-center">
+                    <td className="py-1.5 px-2 text-center">
                       <button
                         onClick={() => deleteRow(idx)}
                         title="Delete Row"
@@ -908,79 +938,53 @@ export default function BulkParcelEntryPage() {
         </div>
       </div>
 
-      {/* Sticky Bottom Calculation Bar (Matching Reference Screenshot 1) */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 lg:pl-64 bg-slate-900 text-white shadow-2xl border-t border-slate-800 px-6 py-3.5 transition-all">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-6 text-xs">
-            {/* Entries count */}
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400 uppercase tracking-wider font-semibold">
-                Entries:
-              </span>
-              <span className="px-2 py-0.5 rounded bg-slate-800 font-mono font-bold text-white text-sm">
-                {validRows.length}
-              </span>
+      {/* Floating Modern Calculation & Action Dock (Above taskbar, clean, spaced) */}
+      <div className="fixed bottom-3 left-4 right-4 lg:left-72 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl px-5 py-3 transition-all">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Metrics chips */}
+          <div className="flex flex-wrap items-center gap-2.5 text-xs">
+            {/* Entries */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Entries</span>
+              <span className="font-mono font-black text-sm">{validRows.length}</span>
             </div>
 
             {/* Total COD */}
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400 uppercase tracking-wider font-semibold">
-                Total COD:
-              </span>
-              <span className="font-bold text-blue-400 text-sm">
-                Rs. {totalCod.toLocaleString("en-IN")}
-              </span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
+              <span className="text-[10px] uppercase font-bold text-blue-500">COD</span>
+              <span className="font-mono font-black text-sm">Rs. {totalCod.toLocaleString("en-IN")}</span>
             </div>
 
-            {/* Total Advance */}
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400 uppercase tracking-wider font-semibold">
-                Advance Paid:
-              </span>
-              <span className="font-bold text-amber-400 text-sm">
-                Rs. {totalAdvance.toLocaleString("en-IN")}
-              </span>
+            {/* Advance */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+              <span className="text-[10px] uppercase font-bold text-amber-500">Advance</span>
+              <span className="font-mono font-black text-sm">Rs. {totalAdvance.toLocaleString("en-IN")}</span>
             </div>
 
-            {/* Total Value */}
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400 uppercase tracking-wider font-semibold">
-                Total Order Value:
-              </span>
-              <span className="font-bold text-slate-200 text-sm">
-                Rs. {totalOrderValue.toLocaleString("en-IN")}
-              </span>
+            {/* Delivery Charge */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Charges</span>
+              <span className="font-mono font-bold text-sm">Rs. {totalDeliveryCharge.toLocaleString("en-IN")}</span>
             </div>
 
-            {/* Estimated Delivery Charge */}
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400 uppercase tracking-wider font-semibold">
-                Delivery Charge:
-              </span>
-              <span className="font-bold text-slate-300 text-sm">
-                Rs. {totalDeliveryCharge.toLocaleString("en-IN")}
-              </span>
-            </div>
-
-            {/* Estimated Net */}
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400 uppercase tracking-wider font-semibold">
-                Net Receivable (COD - Charge):
-              </span>
-              <span className="font-bold text-emerald-400 text-sm">
-                Rs. {estimatedNet.toLocaleString("en-IN")}
-              </span>
+            {/* Net Receivable */}
+            <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40">
+              <span className="text-[10px] uppercase font-bold text-emerald-600">Net Receivable</span>
+              <span className="font-mono font-black text-sm">Rs. {estimatedNet.toLocaleString("en-IN")}</span>
             </div>
           </div>
 
-          <button
-            onClick={handleSaveBatch}
-            disabled={saving || validRows.length === 0}
-            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-semibold text-xs shadow-lg shadow-blue-500/20 transition-all shrink-0"
-          >
-            <Save className="w-4 h-4" />
-            <span>{saving ? "Saving Batch..." : `Save Batch (${validRows.length} Parcels)`}</span>
-          </button>
+          {/* Action CTA */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSaveBatch}
+              disabled={saving || validRows.length === 0}
+              className="w-full lg:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 disabled:opacity-40 text-white font-bold text-xs shadow-lg shadow-blue-500/25 transition-all"
+            >
+              <Save className="w-4 h-4" />
+              <span>{saving ? "Saving Batch..." : `Save Batch (${validRows.length} Parcels)`}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -995,10 +999,10 @@ export default function BulkParcelEntryPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                    Paste Parcels from Excel / Sheets
+                    Paste Parcels from Excel / Google Sheets
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Copy cells from Excel or Google Sheets and paste below (Inside Valley only)
+                    Copy rows from your spreadsheet and paste below
                   </p>
                 </div>
               </div>
@@ -1011,7 +1015,7 @@ export default function BulkParcelEntryPage() {
                 </span>
                 <p>1. Customer Name | Mobile | Address | SKU | COD Amount | Advance | Charge | Remarks</p>
                 <p className="mt-0.5">2. S.N. | Customer Name | Mobile | Address | SKU | COD Amount | Advance | Charge | Remarks</p>
-                <p className="mt-0.5 text-slate-500 dark:text-slate-400 italic text-[11px]">* Legacy order (Name, Mobile, COD, Advance, SKU, Charge, Address) is also supported automatically.</p>
+                <p className="mt-0.5 text-slate-500 dark:text-slate-400 italic text-[11px]">* Delivery Charge defaults to 0 if omitted.</p>
               </div>
 
               <textarea

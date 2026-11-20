@@ -1177,6 +1177,118 @@ export async function updateBatchWithParcels(
   return { batch: local.batches[batchIdx], parcels: updatedBatchParcels };
 }
 
+export async function deleteBatch(
+  idOrBatchId: string,
+  userName = "Admin"
+): Promise<{ success: boolean; batchId: string; deletedParcelsCount: number }> {
+  const isMongo = await checkMongoConnection();
+  let batch: IBatch | null = null;
+
+  if (isMongo) {
+    try {
+      const doc = await Batch.findOne({
+        $or: [{ _id: idOrBatchId }, { batchId: idOrBatchId }],
+      }).lean();
+      if (doc) batch = JSON.parse(JSON.stringify(doc));
+    } catch (err: any) {
+      console.warn("MongoDB find batch for delete error:", err.message);
+    }
+  }
+
+  const local = readLocalData();
+  const bIdx = local.batches.findIndex(
+    (b) => b._id === idOrBatchId || b.batchId === idOrBatchId
+  );
+  if (!batch && bIdx !== -1) {
+    batch = local.batches[bIdx];
+  }
+
+  if (!batch) {
+    throw new Error(`Batch ${idOrBatchId} not found`);
+  }
+
+  const batchId = batch.batchId;
+  const courierId = batch.courierId;
+  const now = new Date().toISOString();
+
+  // Check if any parcel in this batch has already been settled in a finalized settlement statement
+  let settledParcelsCount = 0;
+  if (isMongo) {
+    try {
+      settledParcelsCount = await Parcel.countDocuments({
+        batchId,
+        isSettled: true,
+      });
+    } catch {}
+  } else {
+    settledParcelsCount = local.parcels.filter(
+      (p) => p.batchId === batchId && p.isSettled
+    ).length;
+  }
+
+  if (settledParcelsCount > 0) {
+    throw new Error(
+      `Cannot delete Batch ${batchId} because ${settledParcelsCount} parcel(s) are already settled in a COD settlement statement. Please delete or reverse the settlement first.`
+    );
+  }
+
+  let deletedCount = 0;
+
+  // 1. Delete from MongoDB if connected
+  if (isMongo) {
+    try {
+      deletedCount = await Parcel.countDocuments({ batchId });
+      await Batch.findOneAndDelete({
+        $or: [{ _id: batch._id }, { batchId }],
+      });
+      await Parcel.deleteMany({ batchId });
+      await Return.deleteMany({ batchId });
+
+      if (courierId) {
+        await syncCourierStatsMongo(courierId);
+      }
+    } catch (err: any) {
+      console.error("MongoDB deleteBatch error:", err);
+      throw new Error(`Failed to delete batch from MongoDB: ${err.message}`);
+    }
+  }
+
+  // 2. Delete from local store
+  if (bIdx !== -1) {
+    local.batches.splice(bIdx, 1);
+  }
+  const beforeParcels = local.parcels.length;
+  local.parcels = local.parcels.filter((p) => p.batchId !== batchId);
+  const localDeleted = beforeParcels - local.parcels.length;
+  if (deletedCount === 0) {
+    deletedCount = localDeleted;
+  }
+  local.returns = local.returns.filter((r) => r.batchId !== batchId);
+
+  if (courierId) {
+    recalculateCourierStats(local, courierId);
+  }
+
+  local.activityLogs.unshift({
+    _id: "act-" + Date.now(),
+    action: "BATCH_DELETED",
+    details: `Deleted batch ${batchId} along with ${deletedCount} parcel(s) for ${batch.courierName}`,
+    userName,
+    createdAt: now,
+  });
+
+  writeLocalData(local);
+
+  // Invalidate all caches
+  dbCache.invalidateNamespace("batches");
+  dbCache.invalidateNamespace("parcels");
+  dbCache.invalidateNamespace("dashboard");
+  dbCache.invalidateNamespace("couriers");
+  dbCache.invalidateNamespace("returns");
+
+  return { success: true, batchId, deletedParcelsCount: deletedCount };
+}
+
 // -------------------------------------------------------------
 // PARCEL SERVICES
 // -------------------------------------------------------------
