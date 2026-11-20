@@ -1297,16 +1297,34 @@ export async function updateParcelStatus(
     remarks?: string;
   }
 ): Promise<IParcel | null> {
+  const isMongo = await checkMongoConnection();
+  const now = new Date().toISOString();
+  let parcel: IParcel | null = null;
+
+  if (isMongo) {
+    try {
+      const doc = await Parcel.findOne({
+        $or: [{ _id: parcelId }, { parcelId }],
+      }).lean();
+      if (doc) {
+        parcel = JSON.parse(JSON.stringify(doc));
+      }
+    } catch (err: any) {
+      console.warn("MongoDB find parcel in updateParcelStatus error:", err.message);
+    }
+  }
+
   const local = readLocalData();
   const idx = local.parcels.findIndex(
     (p) => p._id === parcelId || p.parcelId === parcelId
   );
-  if (idx === -1) return null;
+  if (!parcel && idx !== -1) {
+    parcel = local.parcels[idx];
+  }
 
-  const parcel = local.parcels[idx];
+  if (!parcel) return null;
+
   const oldStatus = parcel.status;
-  const now = new Date().toISOString();
-
   parcel.status = newStatus;
   parcel.updatedAt = now;
 
@@ -1327,28 +1345,37 @@ export async function updateParcelStatus(
     remarks: options.remarks,
   });
 
-  // Re-calculate batch stats
-  recalculateBatchCounts(local, parcel.batchId);
+  if (isMongo) {
+    try {
+      await Parcel.findOneAndUpdate(
+        { $or: [{ _id: parcel._id }, { parcelId: parcel.parcelId }] },
+        parcel,
+        { new: true }
+      );
+      if (parcel.batchId) {
+        await syncBatchCountsMongo(parcel.batchId);
+      }
+      if (parcel.courierId) {
+        await syncCourierStatsMongo(parcel.courierId);
+      }
+    } catch (mErr: any) {
+      console.warn("MongoDB updateParcelStatus error:", mErr.message);
+    }
+  }
 
-  // Update courier stats
-  recalculateCourierStats(local, parcel.courierId);
-
+  if (idx !== -1) {
+    local.parcels[idx] = parcel;
+  } else {
+    local.parcels.push(parcel);
+  }
+  if (parcel.batchId) recalculateBatchCounts(local, parcel.batchId);
+  if (parcel.courierId) recalculateCourierStats(local, parcel.courierId);
   writeLocalData(local);
+
   dbCache.invalidateNamespace("parcels");
   dbCache.invalidateNamespace("batches");
   dbCache.invalidateNamespace("dashboard");
   dbCache.invalidateNamespace("couriers");
-
-  const isMongo = await checkMongoConnection();
-  if (isMongo) {
-    try {
-      await Parcel.findOneAndUpdate(
-        { $or: [{ _id: parcelId }, { parcelId }] },
-        parcel,
-        { new: true }
-      );
-    } catch { }
-  }
 
   return parcel;
 }
@@ -1363,65 +1390,86 @@ export async function bulkUpdateParcelStatus(
     remarks?: string;
   }
 ): Promise<{ updatedCount: number; parcels: IParcel[] }> {
-  const local = readLocalData();
+  const isMongo = await checkMongoConnection();
+  const now = new Date().toISOString();
   const updatedParcels: IParcel[] = [];
   const affectedBatchIds = new Set<string>();
   const affectedCourierIds = new Set<string>();
-  const now = new Date().toISOString();
 
+  if (isMongo) {
+    try {
+      const docs = await Parcel.find({
+        $or: [{ parcelId: { $in: parcelIds } }, { _id: { $in: parcelIds } }],
+      }).lean();
+
+      for (const d of docs) {
+        const p: IParcel = JSON.parse(JSON.stringify(d));
+        const oldStatus = p.status;
+        p.status = newStatus;
+        p.updatedAt = now;
+        if (newStatus === "Delivered") {
+          p.deliveredDate = getTodayString();
+        }
+        if (newStatus === "Delivery Attempt Failed") {
+          p.failureReason = options.reason;
+        }
+        if (!p.statusHistory) p.statusHistory = [];
+        p.statusHistory.push({
+          previousStatus: oldStatus,
+          newStatus,
+          timestamp: now,
+          updatedBy: options.updatedBy,
+          reason: options.reason,
+          remarks: options.remarks,
+        });
+
+        await Parcel.findOneAndUpdate(
+          { $or: [{ _id: p._id }, { parcelId: p.parcelId }] },
+          p,
+          { new: true }
+        );
+
+        if (p.batchId) affectedBatchIds.add(p.batchId);
+        if (p.courierId) affectedCourierIds.add(p.courierId);
+        updatedParcels.push(p);
+      }
+
+      for (const bId of affectedBatchIds) {
+        await syncBatchCountsMongo(bId);
+      }
+      for (const cId of affectedCourierIds) {
+        await syncCourierStatsMongo(cId);
+      }
+    } catch (err: any) {
+      console.warn("bulkUpdateParcelStatus Mongo error:", err.message);
+    }
+  }
+
+  // Also update local store
+  const local = readLocalData();
   for (const id of parcelIds) {
     const idx = local.parcels.findIndex((p) => p._id === id || p.parcelId === id);
     if (idx !== -1) {
       const p = local.parcels[idx];
-      const oldStatus = p.status;
       p.status = newStatus;
       p.updatedAt = now;
-      if (newStatus === "Delivered") {
-        p.deliveredDate = getTodayString();
+      if (newStatus === "Delivered") p.deliveredDate = getTodayString();
+      if (newStatus === "Delivery Attempt Failed") p.failureReason = options.reason;
+      if (p.batchId) affectedBatchIds.add(p.batchId);
+      if (p.courierId) affectedCourierIds.add(p.courierId);
+      if (!updatedParcels.some((up) => up.parcelId === p.parcelId)) {
+        updatedParcels.push(p);
       }
-      if (newStatus === "Delivery Attempt Failed") {
-        p.failureReason = options.reason;
-      }
-      if (!p.statusHistory) p.statusHistory = [];
-      p.statusHistory.push({
-        previousStatus: oldStatus,
-        newStatus,
-        timestamp: now,
-        updatedBy: options.updatedBy,
-        reason: options.reason,
-        remarks: options.remarks,
-      });
-
-      affectedBatchIds.add(p.batchId);
-      affectedCourierIds.add(p.courierId);
-      updatedParcels.push(p);
     }
   }
-
   affectedBatchIds.forEach((bId) => recalculateBatchCounts(local, bId));
   affectedCourierIds.forEach((cId) => recalculateCourierStats(local, cId));
-
   writeLocalData(local);
+
   dbCache.invalidateNamespace("parcels");
   dbCache.invalidateNamespace("batches");
   dbCache.invalidateNamespace("dashboard");
   dbCache.invalidateNamespace("couriers");
-
-  const isMongo = await checkMongoConnection();
-  if (isMongo) {
-    try {
-      await Parcel.updateMany(
-        { parcelId: { $in: parcelIds } },
-        {
-          $set: {
-            status: newStatus,
-            deliveredDate: newStatus === "Delivered" ? getTodayString() : undefined,
-            failureReason: newStatus === "Delivery Attempt Failed" ? options.reason : undefined,
-          },
-        }
-      );
-    } catch { }
-  }
 
   return { updatedCount: updatedParcels.length, parcels: updatedParcels };
 }
@@ -1461,21 +1509,116 @@ function recalculateCourierStats(local: LocalDataStore, courierId: string) {
   local.couriers[cIdx].totalCodCollected = delivered.reduce((sum, p) => sum + p.codAmount, 0);
 }
 
+export async function syncBatchCountsMongo(batchId: string): Promise<void> {
+  if (!batchId) return;
+  const isMongo = await checkMongoConnection();
+  if (!isMongo) return;
+  try {
+    const batchParcels = await Parcel.find({ batchId }).lean();
+    if (!batchParcels || batchParcels.length === 0) return;
+
+    const delivered = batchParcels.filter((p: any) => p.status === "Delivered").length;
+    const returned = batchParcels.filter(
+      (p: any) => p.status === "Returned to Warehouse" || p.status === "Return Initiated"
+    ).length;
+    const failed = batchParcels.filter((p: any) => p.status === "Delivery Attempt Failed").length;
+    const pending = batchParcels.filter(
+      (p: any) => p.status === "With Courier" || p.status === "Pending Verification"
+    ).length;
+
+    const totalCodAmount = batchParcels.reduce((sum: number, p: any) => sum + (Number(p.codAmount) || 0), 0);
+    const totalAdvancePaid = batchParcels.reduce((sum: number, p: any) => sum + (Number(p.advancePayment) || 0), 0);
+    const totalDeliveryCharges = batchParcels.reduce((sum: number, p: any) => sum + (Number(p.deliveryCharge) || 0), 0);
+
+    await Batch.findOneAndUpdate(
+      { batchId },
+      {
+        $set: {
+          totalParcels: batchParcels.length,
+          deliveredCount: delivered,
+          returnedCount: returned,
+          failedCount: failed,
+          pendingCount: pending,
+          totalCodAmount,
+          totalAdvancePaid,
+          totalDeliveryCharges,
+          updatedAt: new Date().toISOString(),
+        },
+      }
+    );
+  } catch (err: any) {
+    console.warn("syncBatchCountsMongo warning:", err.message);
+  }
+}
+
+export async function syncCourierStatsMongo(courierId: string): Promise<void> {
+  if (!courierId) return;
+  const isMongo = await checkMongoConnection();
+  if (!isMongo) return;
+  try {
+    const courierParcels = await Parcel.find({ courierId }).lean();
+    const delivered = courierParcels.filter((p: any) => p.status === "Delivered").length;
+    const returned = courierParcels.filter(
+      (p: any) => p.status === "Returned to Warehouse" || p.status === "Return Initiated"
+    ).length;
+    const totalParcels = courierParcels.length;
+    const successRate = totalParcels > 0 ? Math.round((delivered / totalParcels) * 100) : 0;
+
+    await CourierCompany.findByIdAndUpdate(courierId, {
+      $set: {
+        totalParcelsDelivered: delivered,
+        totalParcelsReturned: returned,
+        totalParcelsHandled: totalParcels,
+        deliverySuccessRate: successRate,
+        updatedAt: new Date().toISOString(),
+      },
+    });
+  } catch (err: any) {
+    console.warn("syncCourierStatsMongo warning:", err.message);
+  }
+}
+
 // -------------------------------------------------------------
 // RETURN MANAGEMENT SERVICES (Dedicated Module)
 // -------------------------------------------------------------
 export async function searchParcelsForReturn(query: string): Promise<IParcel[]> {
-  const s = query.trim().toLowerCase();
+  const s = query.trim();
   if (!s) return [];
+
+  const isMongo = await checkMongoConnection();
+  if (isMongo) {
+    try {
+      const escaped = s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escaped, "i");
+      const parcels = await Parcel.find({
+        $or: [
+          { parcelId: regex },
+          { customerPhone: regex },
+          { customerName: regex },
+          { batchId: regex },
+          { courierName: regex },
+        ],
+      })
+        .limit(100)
+        .lean();
+      if (parcels && parcels.length > 0) {
+        return JSON.parse(JSON.stringify(parcels));
+      }
+    } catch (err: any) {
+      console.warn("MongoDB searchParcelsForReturn error:", err.message);
+    }
+  }
+
   const local = readLocalData();
+  const lower = s.toLowerCase();
   return local.parcels
     .filter(
       (p) =>
-        p.parcelId.toLowerCase().includes(s) ||
+        p.parcelId.toLowerCase().includes(lower) ||
         p.customerPhone.includes(s) ||
-        p.customerName.toLowerCase().includes(s) ||
-        p.batchId.toLowerCase().includes(s) ||
-        p.courierName.toLowerCase().includes(s)
+        p.customerName.toLowerCase().includes(lower) ||
+        p.batchId.toLowerCase().includes(lower) ||
+        p.courierName.toLowerCase().includes(lower)
     )
     .slice(0, 100);
 }
@@ -1487,27 +1630,40 @@ export async function processReturnInward(data: {
   returnCharge?: number;
   notes?: string;
 }): Promise<{ returnRecord: IReturnRecord; updatedParcel: IParcel }> {
-  const local = readLocalData();
-  const pIdx = local.parcels.findIndex(
-    (p) => p.parcelId === data.parcelId || p._id === data.parcelId
-  );
-
-  if (pIdx === -1) {
-    throw new Error(`Parcel ${data.parcelId} not found`);
-  }
-
-  const parcel = local.parcels[pIdx];
-
-  // Prevent duplicate return inward processing
-  if (parcel.status === "Returned to Warehouse") {
-    throw new Error(`Parcel ${parcel.parcelId} is already marked as 'Returned to Warehouse'`);
-  }
-
+  const isMongo = await checkMongoConnection();
   const now = new Date().toISOString();
   const returnDate = getTodayString();
   const returnCharge = data.returnCharge !== undefined ? data.returnCharge : 0;
 
-  // Update existing parcel record (Never create a duplicate parcel!)
+  let parcel: IParcel | null = null;
+
+  if (isMongo) {
+    try {
+      const doc = await Parcel.findOne({
+        $or: [{ parcelId: data.parcelId }, { _id: data.parcelId }],
+      }).lean();
+      if (doc) parcel = JSON.parse(JSON.stringify(doc));
+    } catch (err: any) {
+      console.warn("Mongo find parcel for return error:", err.message);
+    }
+  }
+
+  const local = readLocalData();
+  const pIdx = local.parcels.findIndex(
+    (p) => p.parcelId === data.parcelId || p._id === data.parcelId
+  );
+  if (!parcel && pIdx !== -1) {
+    parcel = local.parcels[pIdx];
+  }
+
+  if (!parcel) {
+    throw new Error(`Parcel ${data.parcelId} not found`);
+  }
+
+  if (parcel.status === "Returned to Warehouse") {
+    throw new Error(`Parcel ${parcel.parcelId} is already marked as 'Returned to Warehouse'`);
+  }
+
   const oldStatus = parcel.status;
   parcel.status = "Returned to Warehouse";
   parcel.returnDate = returnDate;
@@ -1525,10 +1681,10 @@ export async function processReturnInward(data: {
     remarks: data.notes || "Physically returned to warehouse & inward processed",
   });
 
-  // Create return record
+  const nextNum = String(Date.now()).slice(-4);
   const returnRecord: IReturnRecord = {
     _id: "ret-" + Date.now(),
-    returnId: `RET-${returnDate.replace(/-/g, "")}-${String(local.returns.length + 1).padStart(3, "0")}`,
+    returnId: `RET-${returnDate.replace(/-/g, "")}-${nextNum}`,
     parcelId: parcel.parcelId,
     batchId: parcel.batchId,
     courierId: parcel.courierId,
@@ -1547,11 +1703,52 @@ export async function processReturnInward(data: {
     createdAt: now,
   };
 
-  local.returns.unshift(returnRecord);
+  // Update in MongoDB
+  if (isMongo) {
+    try {
+      await Parcel.findOneAndUpdate(
+        { parcelId: parcel.parcelId },
+        {
+          $set: {
+            status: "Returned to Warehouse",
+            returnDate,
+            returnReason: data.returnReason,
+            returnedProcessedBy: data.processedBy,
+            updatedAt: now,
+          },
+          $push: {
+            statusHistory: {
+              previousStatus: oldStatus,
+              newStatus: "Returned to Warehouse",
+              timestamp: now,
+              updatedBy: data.processedBy,
+              reason: data.returnReason,
+              remarks: data.notes || "Inward return processed",
+            },
+          },
+        }
+      );
+      await Return.findOneAndUpdate(
+        { parcelId: parcel.parcelId },
+        returnRecord,
+        { upsert: true, new: true }
+      );
+      if (parcel.batchId) await syncBatchCountsMongo(parcel.batchId);
+      if (parcel.courierId) await syncCourierStatsMongo(parcel.courierId);
+    } catch (err: any) {
+      console.error("MongoDB return inward error:", err);
+    }
+  }
 
-  // Recalculate batch & courier
-  recalculateBatchCounts(local, parcel.batchId);
-  recalculateCourierStats(local, parcel.courierId);
+  // Update local store as backup
+  if (pIdx !== -1) {
+    local.parcels[pIdx] = parcel;
+  } else {
+    local.parcels.push(parcel);
+  }
+  local.returns.unshift(returnRecord);
+  if (parcel.batchId) recalculateBatchCounts(local, parcel.batchId);
+  if (parcel.courierId) recalculateCourierStats(local, parcel.courierId);
 
   local.activityLogs.unshift({
     _id: "act-" + Date.now(),
@@ -1566,34 +1763,7 @@ export async function processReturnInward(data: {
   dbCache.invalidateNamespace("batches");
   dbCache.invalidateNamespace("dashboard");
   dbCache.invalidateNamespace("couriers");
-
-  const isMongo = await checkMongoConnection();
-  if (isMongo) {
-    try {
-      await Parcel.findOneAndUpdate(
-        { parcelId: parcel.parcelId },
-        {
-          $set: {
-            status: "Returned to Warehouse",
-            returnDate,
-            returnReason: data.returnReason,
-            returnedProcessedBy: data.processedBy,
-          },
-          $push: {
-            statusHistory: {
-              previousStatus: oldStatus,
-              newStatus: "Returned to Warehouse",
-              timestamp: now,
-              updatedBy: data.processedBy,
-              reason: data.returnReason,
-              remarks: data.notes || "Inward return processed",
-            },
-          },
-        }
-      );
-      await Return.create(returnRecord);
-    } catch { }
-  }
+  dbCache.invalidateNamespace("returns");
 
   return { returnRecord, updatedParcel: parcel };
 }
@@ -1615,7 +1785,7 @@ export async function processBulkReturnInward(data: {
   returnRecords: IReturnRecord[];
   failedItems: Array<{ customerPhone: string; parcelId?: string; reason: string }>;
 }> {
-  const local = readLocalData();
+  const isMongo = await checkMongoConnection();
   const now = new Date().toISOString();
   const returnDate = data.returnDate || getTodayString();
   const dateStr = returnDate.replace(/-/g, "");
@@ -1626,6 +1796,28 @@ export async function processBulkReturnInward(data: {
   const touchedBatchIds = new Set<string>();
   const touchedCourierIds = new Set<string>();
 
+  // Fetch all parcels that might match from Mongo or local
+  let poolParcels: IParcel[] = [];
+  if (isMongo) {
+    try {
+      const q: any = {};
+      if (data.batchId) q.batchId = data.batchId;
+      if (data.courierId) q.courierId = data.courierId;
+      const docs = await Parcel.find(q).lean();
+      poolParcels = JSON.parse(JSON.stringify(docs));
+    } catch (err: any) {
+      console.warn("processBulkReturnInward Mongo pool error:", err.message);
+    }
+  }
+
+  const local = readLocalData();
+  // Merge with local parcels
+  for (const lp of local.parcels) {
+    if (!poolParcels.some((p) => p.parcelId === lp.parcelId)) {
+      poolParcels.push(lp);
+    }
+  }
+
   for (let i = 0; i < data.returns.length; i++) {
     const item = data.returns[i];
     const phone = item.customerPhone?.trim() || "";
@@ -1633,40 +1825,23 @@ export async function processBulkReturnInward(data: {
 
     if (!phone && !pid) continue;
 
-    let pIdx = -1;
+    let parcel: IParcel | undefined = undefined;
     if (pid) {
-      pIdx = local.parcels.findIndex((p) => p.parcelId === pid || p._id === pid);
+      parcel = poolParcels.find((p) => p.parcelId === pid || p._id === pid);
     } else if (data.batchId) {
-      pIdx = local.parcels.findIndex(
-        (p) =>
-          p.batchId === data.batchId &&
-          p.customerPhone === phone &&
-          p.status !== "Returned to Warehouse"
-      );
-      if (pIdx === -1) {
-        pIdx = local.parcels.findIndex(
-          (p) => p.batchId === data.batchId && p.customerPhone === phone
-        );
-      }
+      parcel = poolParcels.find(
+        (p) => p.batchId === data.batchId && p.customerPhone === phone && p.status !== "Returned to Warehouse"
+      ) || poolParcels.find((p) => p.batchId === data.batchId && p.customerPhone === phone);
     } else if (data.courierId) {
-      pIdx = local.parcels.findIndex(
-        (p) =>
-          p.courierId === data.courierId &&
-          p.customerPhone === phone &&
-          p.status !== "Returned to Warehouse"
-      );
-      if (pIdx === -1) {
-        pIdx = local.parcels.findIndex(
-          (p) => p.courierId === data.courierId && p.customerPhone === phone
-        );
-      }
+      parcel = poolParcels.find(
+        (p) => p.courierId === data.courierId && p.customerPhone === phone && p.status !== "Returned to Warehouse"
+      ) || poolParcels.find((p) => p.courierId === data.courierId && p.customerPhone === phone);
     } else {
-      pIdx = local.parcels.findIndex(
-        (p) => p.customerPhone === phone && p.status !== "Returned to Warehouse"
-      );
+      parcel = poolParcels.find((p) => p.customerPhone === phone && p.status !== "Returned to Warehouse")
+        || poolParcels.find((p) => p.customerPhone === phone);
     }
 
-    if (pIdx === -1) {
+    if (!parcel) {
       failedItems.push({
         customerPhone: phone,
         parcelId: pid,
@@ -1676,8 +1851,6 @@ export async function processBulkReturnInward(data: {
       });
       continue;
     }
-
-    const parcel = local.parcels[pIdx];
 
     if (parcel.status === "Returned to Warehouse") {
       failedItems.push({
@@ -1705,10 +1878,9 @@ export async function processBulkReturnInward(data: {
       remarks: item.notes || `Bulk return inward processed from batch ${parcel.batchId}`,
     });
 
-    const nextNum = String(local.returns.length + 1).padStart(3, "0");
     const returnRecord: IReturnRecord = {
       _id: "ret-" + Date.now() + "-" + i,
-      returnId: `RET-${dateStr}-${nextNum}`,
+      returnId: `RET-${dateStr}-${String(Date.now()).slice(-4)}-${i + 1}`,
       parcelId: parcel.parcelId,
       batchId: parcel.batchId,
       courierId: parcel.courierId,
@@ -1727,7 +1899,6 @@ export async function processBulkReturnInward(data: {
       createdAt: now,
     };
 
-    local.returns.unshift(returnRecord);
     returnRecords.push(returnRecord);
     updatedParcels.push(parcel);
 
@@ -1735,9 +1906,59 @@ export async function processBulkReturnInward(data: {
     if (parcel.courierId) touchedCourierIds.add(parcel.courierId);
   }
 
-  // Recalculate batch counts
+  // Save to MongoDB
+  if (isMongo && updatedParcels.length > 0) {
+    try {
+      for (const p of updatedParcels) {
+        await Parcel.findOneAndUpdate(
+          { parcelId: p.parcelId },
+          {
+            $set: {
+              status: "Returned to Warehouse",
+              returnDate,
+              returnReason: p.returnReason,
+              returnedProcessedBy: data.processedBy,
+              updatedAt: now,
+            },
+            $push: {
+              statusHistory: {
+                previousStatus: "With Courier",
+                newStatus: "Returned to Warehouse",
+                timestamp: now,
+                updatedBy: data.processedBy,
+                reason: p.returnReason,
+                remarks: "Bulk return inward processed",
+              },
+            },
+          }
+        );
+      }
+
+      for (const r of returnRecords) {
+        await Return.findOneAndUpdate({ parcelId: r.parcelId }, r, { upsert: true, new: true });
+      }
+
+      for (const bId of touchedBatchIds) {
+        await syncBatchCountsMongo(bId);
+      }
+      for (const cId of touchedCourierIds) {
+        await syncCourierStatsMongo(cId);
+      }
+    } catch (err: any) {
+      console.error("Bulk return Mongo sync error:", err);
+    }
+  }
+
+  // Also update local store
+  for (const p of updatedParcels) {
+    const lIdx = local.parcels.findIndex((lp) => lp.parcelId === p.parcelId);
+    if (lIdx !== -1) local.parcels[lIdx] = p;
+    else local.parcels.push(p);
+  }
+  for (const r of returnRecords) {
+    local.returns.unshift(r);
+  }
   touchedBatchIds.forEach((bId) => recalculateBatchCounts(local, bId));
-  // Recalculate courier stats
   touchedCourierIds.forEach((cId) => recalculateCourierStats(local, cId));
 
   if (updatedParcels.length > 0) {
@@ -1780,6 +2001,19 @@ export async function getReturns(filters?: {
         if (filters.startDate) query.returnDate.$gte = filters.startDate;
         if (filters.endDate) query.returnDate.$lte = filters.endDate;
       }
+      if (filters?.search) {
+        const s = filters.search.trim();
+        const escaped = s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(escaped, "i");
+        query.$or = [
+          { parcelId: regex },
+          { customerName: regex },
+          { customerPhone: regex },
+          { returnId: regex },
+          { batchId: regex },
+          { courierName: regex },
+        ];
+      }
       const returns = await Return.find(query).sort({ createdAt: -1 }).lean();
       return JSON.parse(JSON.stringify(returns));
     } catch { }
@@ -1810,7 +2044,7 @@ export async function getReturns(filters?: {
   return returns;
 }
 
-// -------------------------------------------------------------
+
 // COD SETTLEMENT SERVICES (Core Financial Engine)
 // -------------------------------------------------------------
 export async function previewSettlement(params: {
@@ -1854,61 +2088,100 @@ export async function previewSettlement(params: {
   const courier = await getCourierById(params.courierId);
   if (!courier) throw new Error("Courier not found");
 
-  const local = readLocalData();
-  const returnIdSet = new Set((local.returns || []).map((r) => r.parcelId));
+  const isMongo = await checkMongoConnection();
+  let poolParcels: IParcel[] = [];
+  let returnsList: IReturnRecord[] = [];
 
+  if (isMongo) {
+    try {
+      const q: any = { courierId: params.courierId };
+      if (params.batchId) {
+        q.batchId = params.batchId;
+      } else {
+        if (params.startDate || params.endDate) {
+          q.dispatchDate = {};
+          if (params.startDate) q.dispatchDate.$gte = params.startDate;
+          if (params.endDate) q.dispatchDate.$lte = params.endDate;
+        }
+      }
+      const docs = await Parcel.find(q).lean();
+      poolParcels = JSON.parse(JSON.stringify(docs));
+
+      const retDocs = await Return.find({ courierId: params.courierId }).lean();
+      returnsList = JSON.parse(JSON.stringify(retDocs));
+    } catch (err: any) {
+      console.warn("MongoDB previewSettlement query warning:", err.message);
+    }
+  }
+
+  const local = readLocalData();
+  if (poolParcels.length === 0) {
+    poolParcels = local.parcels;
+  }
+  if (returnsList.length === 0) {
+    returnsList = local.returns || [];
+  }
+
+  const returnIdSet = new Set(returnsList.map((r) => r.parcelId));
   const hasBatch = Boolean(params.batchId);
 
-  // 1. Try to find unsettled delivered & returned parcels first
-  let eligibleParcels = local.parcels.filter(
+  // 1. Returned parcels in this batch / period
+  let returnedParcels = poolParcels.filter(
     (p) =>
       p.courierId === params.courierId &&
-      !returnIdSet.has(p.parcelId) &&
-      p.status === "Delivered" &&
-      !p.isSettled &&
-      (hasBatch ? p.batchId === params.batchId : true) &&
-      (!hasBatch && params.startDate ? p.dispatchDate >= params.startDate : true) &&
-      (!hasBatch && params.endDate ? p.dispatchDate <= params.endDate : true)
-  );
-
-  let returnedParcels = local.parcels.filter(
-    (p) =>
-      p.courierId === params.courierId &&
-      (p.status === "Returned to Warehouse" || returnIdSet.has(p.parcelId)) &&
-      !p.isSettled &&
+      (p.status === "Returned to Warehouse" || p.status === "Return Initiated" || returnIdSet.has(p.parcelId)) &&
       (hasBatch ? p.batchId === params.batchId : true) &&
       (!hasBatch && params.startDate ? (p.dispatchDate >= params.startDate || (p.returnDate && p.returnDate >= params.startDate)) : true) &&
       (!hasBatch && params.endDate ? (p.dispatchDate <= params.endDate || (p.returnDate && p.returnDate <= params.endDate)) : true)
   );
 
-  // 2. If includeSettled is explicitly true, OR if a specific batchId was selected and has 0 unsettled parcels,
-  // allow re-generating settlement for this batch / period!
+  // 2. Delivered / Payable parcels in this batch / period
+  let eligibleParcels = poolParcels.filter((p) => {
+    if (p.courierId !== params.courierId) return false;
+    if (returnIdSet.has(p.parcelId) || p.status === "Returned to Warehouse" || p.status === "Return Initiated") return false;
+    if (p.status === "Delivery Attempt Failed") return false;
+    if (hasBatch && p.batchId !== params.batchId) return false;
+    if (!hasBatch && params.startDate && p.dispatchDate < params.startDate) return false;
+    if (!hasBatch && params.endDate && p.dispatchDate > params.endDate) return false;
+
+    // When settling a batch, all non-returned parcels in that batch are payable COD collection
+    if (hasBatch) {
+      return params.includeSettled ? true : !p.isSettled;
+    }
+
+    // When settling without batch filter, parcel must be marked Delivered
+    return p.status === "Delivered" && (params.includeSettled ? true : !p.isSettled);
+  });
+
+  // Resettlement fallback if needed
   let isResettlementMode = false;
   let existingSettlementNumber: string | undefined = undefined;
+  let existingCashReceived: number | undefined = undefined;
+  let existingOnlineReceived: number | undefined = undefined;
+  let existingPaymentMethod: PaymentMethod | undefined = undefined;
+  let existingPaymentReference: string | undefined = undefined;
+  let existingNotes: string | undefined = undefined;
 
   const shouldAllowResettle = Boolean(
     params.includeSettled ||
     (params.batchId && eligibleParcels.length === 0 && returnedParcels.length === 0)
   );
 
-  if (shouldAllowResettle && (eligibleParcels.length === 0 && returnedParcels.length === 0 || params.batchId)) {
-    const allReturned = local.parcels.filter(
+  if (shouldAllowResettle && eligibleParcels.length === 0 && returnedParcels.length === 0) {
+    const allReturned = poolParcels.filter(
       (p) =>
         p.courierId === params.courierId &&
-        (p.status === "Returned to Warehouse" || returnIdSet.has(p.parcelId)) &&
-        (hasBatch ? p.batchId === params.batchId : true) &&
-        (!hasBatch && params.startDate ? (p.dispatchDate >= params.startDate || (p.returnDate && p.returnDate >= params.startDate)) : true) &&
-        (!hasBatch && params.endDate ? (p.dispatchDate <= params.endDate || (p.returnDate && p.returnDate <= params.endDate)) : true)
+        (p.status === "Returned to Warehouse" || p.status === "Return Initiated" || returnIdSet.has(p.parcelId)) &&
+        (hasBatch ? p.batchId === params.batchId : true)
     );
-
-    const allDelivered = local.parcels.filter(
+    const allDelivered = poolParcels.filter(
       (p) =>
         p.courierId === params.courierId &&
         !returnIdSet.has(p.parcelId) &&
-        (p.status === "Delivered" || (!p.returnDate && p.isSettled)) &&
-        (hasBatch ? p.batchId === params.batchId : true) &&
-        (!hasBatch && params.startDate ? p.dispatchDate >= params.startDate : true) &&
-        (!hasBatch && params.endDate ? p.dispatchDate <= params.endDate : true)
+        p.status !== "Returned to Warehouse" &&
+        p.status !== "Return Initiated" &&
+        p.status !== "Delivery Attempt Failed" &&
+        (hasBatch ? p.batchId === params.batchId : p.status === "Delivered")
     );
 
     if (allDelivered.length > 0 || allReturned.length > 0) {
@@ -1916,19 +2189,9 @@ export async function previewSettlement(params: {
       returnedParcels = allReturned;
       isResettlementMode = true;
 
-      // Find linked existing settlement number
       const sample = eligibleParcels.find((p) => p.settlementNumber) || returnedParcels.find((p) => p.settlementNumber);
       if (sample?.settlementNumber) {
         existingSettlementNumber = sample.settlementNumber;
-      } else {
-        const foundSettle = local.settlements.find(
-          (s) =>
-            (params.batchId && (s as any).batchId === params.batchId) ||
-            (s.settledParcels && eligibleParcels.some((p) => s.settledParcels.includes(p.parcelId)))
-        );
-        if (foundSettle) {
-          existingSettlementNumber = foundSettle.settlementNumber;
-        }
       }
     }
   }
@@ -1939,16 +2202,8 @@ export async function previewSettlement(params: {
   const returnedAdvancePayment = returnedParcels.reduce((sum, p) => sum + (p.advancePayment || 0), 0);
   const returnedCodCollection = returnedParcels.reduce((sum, p) => sum + (p.codAmount || 0), 0);
   const deliveryCharges = eligibleParcels.reduce((sum, p) => sum + (p.deliveryCharge || 0), 0);
-
-  // Return charges are 0 (no return charges in the system per business policy)
   const returnCharges = 0;
   const currentNetReceivable = grossCodCollection - deliveryCharges;
-
-  let existingCashReceived: number | undefined = undefined;
-  let existingOnlineReceived: number | undefined = undefined;
-  let existingPaymentMethod: PaymentMethod | undefined = undefined;
-  let existingPaymentReference: string | undefined = undefined;
-  let existingNotes: string | undefined = undefined;
 
   let previousOutstandingDue = courier.currentBalance || 0;
   if (isResettlementMode && existingSettlementNumber) {
@@ -1974,8 +2229,6 @@ export async function previewSettlement(params: {
       returnedCount: number;
       deliveredCod: number;
       returnedCod: number;
-      deliveredAdvance: number;
-      returnedAdvance: number;
       deliveryCharge: number;
     }
   >();
@@ -1988,14 +2241,11 @@ export async function previewSettlement(params: {
       returnedCount: 0,
       deliveredCod: 0,
       returnedCod: 0,
-      deliveredAdvance: 0,
-      returnedAdvance: 0,
       deliveryCharge: 0,
     };
     existing.deliveredCount++;
-    existing.deliveredCod += p.codAmount;
-    existing.deliveredAdvance += (p.advancePayment || 0);
-    existing.deliveryCharge += p.deliveryCharge;
+    existing.deliveredCod += p.codAmount || 0;
+    existing.deliveryCharge += p.deliveryCharge || 0;
     batchMap.set(bId, existing);
   }
 
@@ -2007,13 +2257,10 @@ export async function previewSettlement(params: {
       returnedCount: 0,
       deliveredCod: 0,
       returnedCod: 0,
-      deliveredAdvance: 0,
-      returnedAdvance: 0,
       deliveryCharge: 0,
     };
     existing.returnedCount++;
-    existing.returnedCod += p.codAmount;
-    existing.returnedAdvance += (p.advancePayment || 0);
+    existing.returnedCod += p.codAmount || 0;
     batchMap.set(bId, existing);
   }
 
@@ -2073,7 +2320,7 @@ export async function finalizeSettlement(data: {
   const dateStr = settlementDate.replace(/-/g, "");
 
   // Auto-generate settlement number
-  const nextNum = String(local.settlements.length + 1).padStart(3, "0");
+  const nextNum = String(Date.now()).slice(-4);
   const settlementNumber = `#SET-${dateStr}-${nextNum}`;
 
   const cashReceived = Math.max(0, Number(data.cashReceived || 0));
@@ -2082,7 +2329,7 @@ export async function finalizeSettlement(data: {
   if (cashReceived > 0 || onlineReceived > 0) {
     totalPaymentReceived = cashReceived + onlineReceived;
   }
-  const remainingDue = Math.max(0, preview.totalReceivable - totalPaymentReceived);
+  const remainingDue = Math.max(0, Math.round((preview.totalReceivable - totalPaymentReceived) * 100) / 100);
   const paymentStatus =
     remainingDue <= 0
       ? "Fully Paid"
@@ -2097,7 +2344,7 @@ export async function finalizeSettlement(data: {
     methodLabel = "Cash";
   }
 
-  const initialPaymentNumber = `PAY-${dateStr}-${String(local.payments.length + 1).padStart(3, "0")}`;
+  const initialPaymentNumber = `PAY-${dateStr}-${String(Date.now()).slice(-4)}`;
 
   const initialInstallment: PaymentInstallment = {
     _id: "inst-" + Date.now(),
@@ -2117,102 +2364,6 @@ export async function finalizeSettlement(data: {
     ...preview.eligibleParcels.map((p) => p.parcelId),
     ...preview.returnedParcels.map((p) => p.parcelId),
   ];
-
-  // If re-generating an existing settlement for this batch or set of parcels, update in place
-  const existingIndex = local.settlements.findIndex(
-    (s) =>
-      (preview.existingSettlementNumber && s.settlementNumber.toLowerCase() === preview.existingSettlementNumber.toLowerCase()) ||
-      (data.batchId && (s as any).batchId === data.batchId) ||
-      (s.settledParcels && settledParcelIds.length > 0 && settledParcelIds.every((id) => s.settledParcels.includes(id)))
-  );
-
-  if (existingIndex !== -1) {
-    const existing = local.settlements[existingIndex];
-    existing.deliveredParcelsCount = preview.deliveredCount;
-    existing.returnedParcelsCount = preview.returnedCount;
-    existing.totalProcessedCount = preview.deliveredCount + preview.returnedCount;
-    existing.grossCodCollection = preview.grossCodCollection;
-    existing.totalAdvancePaid = preview.totalAdvancePayment;
-    existing.totalOrderValue = preview.totalOrderValue;
-    existing.deliveryCharges = preview.deliveryCharges;
-    existing.returnCharges = preview.returnCharges;
-    existing.currentNetReceivable = preview.currentNetReceivable;
-    existing.previousOutstandingDue = preview.previousOutstandingDue;
-    existing.totalReceivable = preview.totalReceivable;
-    existing.paymentReceived = totalPaymentReceived;
-    existing.cashReceived = cashReceived;
-    existing.onlineReceived = onlineReceived;
-    existing.remainingDue = remainingDue;
-    existing.paymentStatus = paymentStatus;
-    existing.paymentMethod = methodLabel;
-    existing.paymentReference = data.paymentReference;
-    existing.notes = data.notes || existing.notes || "";
-    existing.settledParcels = settledParcelIds;
-    existing.updatedAt = now;
-
-    if (totalPaymentReceived > 0) {
-      if (!existing.paymentInstallments) existing.paymentInstallments = [];
-      if (existing.paymentInstallments.length === 0) {
-        existing.paymentInstallments.push(initialInstallment);
-      }
-    }
-
-    for (const pId of settledParcelIds) {
-      const idx = local.parcels.findIndex((p) => p.parcelId === pId);
-      if (idx !== -1) {
-        local.parcels[idx].isSettled = true;
-        local.parcels[idx].settlementId = existing._id;
-        local.parcels[idx].settlementNumber = existing.settlementNumber;
-        local.parcels[idx].settlementDate = existing.settlementDate || settlementDate;
-        local.parcels[idx].updatedAt = now;
-      }
-    }
-
-    const cIdx = local.couriers.findIndex((c) => c._id === data.courierId);
-    if (cIdx !== -1) {
-      local.couriers[cIdx].currentBalance = remainingDue;
-      local.couriers[cIdx].updatedAt = now;
-    }
-
-    local.activityLogs.unshift({
-      _id: "act-" + Date.now(),
-      action: "SETTLEMENT_REGENERATED",
-      details: `Settlement ${existing.settlementNumber} re-generated and updated for ${preview.courier.name}. Gross COD: Rs. ${preview.grossCodCollection}, Remaining Due: Rs. ${remainingDue}`,
-      userName: data.preparedBy,
-      createdAt: now,
-    });
-
-    writeLocalData(local);
-    dbCache.invalidateNamespace("settlements");
-    dbCache.invalidateNamespace("ledger");
-    dbCache.invalidateNamespace("parcels");
-    dbCache.invalidateNamespace("batches");
-    dbCache.invalidateNamespace("dashboard");
-    dbCache.invalidateNamespace("couriers");
-
-    const isMongo = await checkMongoConnection();
-    if (isMongo) {
-      try {
-        await Settlement.findByIdAndUpdate(existing._id, { $set: existing });
-        await Parcel.updateMany(
-          { parcelId: { $in: settledParcelIds } },
-          {
-            $set: {
-              isSettled: true,
-              settlementId: existing._id,
-              settlementNumber: existing.settlementNumber,
-              settlementDate: existing.settlementDate || settlementDate,
-            },
-          }
-        );
-        await CourierCompany.findByIdAndUpdate(data.courierId, {
-          $set: { currentBalance: remainingDue },
-        });
-      } catch { }
-    }
-
-    return existing;
-  }
 
   const settlement: ISettlement = {
     _id: "settle-" + Date.now(),
@@ -2252,33 +2403,19 @@ export async function finalizeSettlement(data: {
     updatedAt: now,
   };
 
-  local.settlements.unshift(settlement);
-
-  // Lock settled parcels against future recalculations
-  for (const pId of settledParcelIds) {
-    const idx = local.parcels.findIndex((p) => p.parcelId === pId);
-    if (idx !== -1) {
-      local.parcels[idx].isSettled = true;
-      local.parcels[idx].settlementId = settlement._id;
-      local.parcels[idx].settlementNumber = settlementNumber;
-      local.parcels[idx].settlementDate = settlementDate;
-      local.parcels[idx].updatedAt = now;
-    }
-  }
-
-  // Create Ledger Entries for this settlement
+  // Create Ledger Entries
   let runningBal = preview.previousOutstandingDue;
+  const mongoLedgerEntries: any[] = [];
 
-  // 1. Gross COD Entry (Debit courier)
   if (preview.grossCodCollection > 0) {
     runningBal += preview.grossCodCollection;
-    local.ledger.push({
+    const lEntry = {
       _id: "led-" + Date.now() + "-1",
       ledgerId: "LED-" + Date.now().toString().slice(-5) + "-1",
       courierId: data.courierId,
       courierName: preview.courier.name,
       transactionDate: settlementDate,
-      transactionType: "Delivered COD",
+      transactionType: "Delivered COD" as any,
       referenceNumber: settlementNumber,
       description: `Delivered COD collected (${preview.deliveredCount} parcels)`,
       debit: preview.grossCodCollection,
@@ -2286,19 +2423,20 @@ export async function finalizeSettlement(data: {
       runningBalance: runningBal,
       createdBy: data.preparedBy,
       createdAt: now,
-    });
+    };
+    local.ledger.push(lEntry);
+    mongoLedgerEntries.push(lEntry);
   }
 
-  // 2. Delivery Charges Entry (Credit courier)
   if (preview.deliveryCharges > 0) {
     runningBal -= preview.deliveryCharges;
-    local.ledger.push({
+    const lEntry = {
       _id: "led-" + Date.now() + "-2",
       ledgerId: "LED-" + Date.now().toString().slice(-5) + "-2",
       courierId: data.courierId,
       courierName: preview.courier.name,
       transactionDate: settlementDate,
-      transactionType: "Delivery Charge",
+      transactionType: "Delivery Charge" as any,
       referenceNumber: settlementNumber,
       description: `Delivery charges for ${preview.deliveredCount} parcels`,
       debit: 0,
@@ -2306,50 +2444,32 @@ export async function finalizeSettlement(data: {
       runningBalance: runningBal,
       createdBy: data.preparedBy,
       createdAt: now,
-    });
+    };
+    local.ledger.push(lEntry);
+    mongoLedgerEntries.push(lEntry);
   }
 
-  // 3. Return Charges Entry (Credit courier if any)
-  if (preview.returnCharges > 0) {
-    runningBal -= preview.returnCharges;
-    local.ledger.push({
+  if (totalPaymentReceived > 0) {
+    runningBal -= totalPaymentReceived;
+    const lEntry = {
       _id: "led-" + Date.now() + "-3",
       ledgerId: "LED-" + Date.now().toString().slice(-5) + "-3",
       courierId: data.courierId,
       courierName: preview.courier.name,
       transactionDate: settlementDate,
-      transactionType: "Return Charge",
-      referenceNumber: settlementNumber,
-      description: `Return charges for ${preview.returnedCount} returned parcels`,
-      debit: 0,
-      credit: preview.returnCharges,
-      runningBalance: runningBal,
-      createdBy: data.preparedBy,
-      createdAt: now,
-    });
-  }
-
-  // 4. Payment Received Entry (Credit courier)
-  if (totalPaymentReceived > 0) {
-    runningBal -= totalPaymentReceived;
-    local.ledger.push({
-      _id: "led-" + Date.now() + "-4",
-      ledgerId: "LED-" + Date.now().toString().slice(-5) + "-4",
-      courierId: data.courierId,
-      courierName: preview.courier.name,
-      transactionDate: settlementDate,
-      transactionType: "Payment Received",
-      referenceNumber: data.paymentReference || settlementNumber,
-      description: `Payment received via ${methodLabel}`,
+      transactionType: "Payment Received" as any,
+      referenceNumber: data.paymentReference || initialPaymentNumber,
+      description: `Settlement payment received (${methodLabel})`,
       debit: 0,
       credit: totalPaymentReceived,
-      runningBalance: runningBal,
+      runningBalance: remainingDue,
       createdBy: data.preparedBy,
       createdAt: now,
-    });
+    };
+    local.ledger.push(lEntry);
+    mongoLedgerEntries.push(lEntry);
 
-    // Also record in Payments collection
-    local.payments.unshift({
+    const paymentObj: IPayment = {
       _id: "pay-" + Date.now(),
       paymentNumber: initialPaymentNumber,
       courierId: data.courierId,
@@ -2366,14 +2486,28 @@ export async function finalizeSettlement(data: {
       remarks: `Payment for settlement ${settlementNumber} (Cash: Rs. ${cashReceived}, Online: Rs. ${onlineReceived})`,
       recordedBy: data.preparedBy,
       createdAt: now,
-    });
+    };
+    local.payments.unshift(paymentObj);
   }
 
-  // Update courier's outstanding balance
+  // Update courier balance locally
   const cIdx = local.couriers.findIndex((c) => c._id === data.courierId);
   if (cIdx !== -1) {
     local.couriers[cIdx].currentBalance = remainingDue;
     local.couriers[cIdx].updatedAt = now;
+  }
+
+  local.settlements.unshift(settlement);
+
+  for (const pId of settledParcelIds) {
+    const idx = local.parcels.findIndex((p) => p.parcelId === pId);
+    if (idx !== -1) {
+      local.parcels[idx].isSettled = true;
+      local.parcels[idx].settlementId = settlement._id;
+      local.parcels[idx].settlementNumber = settlementNumber;
+      local.parcels[idx].settlementDate = settlementDate;
+      local.parcels[idx].updatedAt = now;
+    }
   }
 
   local.activityLogs.unshift({
@@ -2385,6 +2519,7 @@ export async function finalizeSettlement(data: {
   });
 
   writeLocalData(local);
+
   dbCache.invalidateNamespace("settlements");
   dbCache.invalidateNamespace("ledger");
   dbCache.invalidateNamespace("parcels");
@@ -2392,29 +2527,97 @@ export async function finalizeSettlement(data: {
   dbCache.invalidateNamespace("dashboard");
   dbCache.invalidateNamespace("couriers");
 
+  // Sync to MongoDB
   const isMongo = await checkMongoConnection();
   if (isMongo) {
     try {
       await Settlement.create(settlement);
-      await Parcel.updateMany(
-        { parcelId: { $in: settledParcelIds } },
-        {
-          $set: {
-            isSettled: true,
-            settlementId: settlement._id,
-            settlementNumber,
-            settlementDate,
-          },
-        }
-      );
+
+      // Update eligible parcels as Delivered & Settled
+      const eligibleIds = preview.eligibleParcels.map((p) => p.parcelId);
+      if (eligibleIds.length > 0) {
+        await Parcel.updateMany(
+          { parcelId: { $in: eligibleIds } },
+          {
+            $set: {
+              isSettled: true,
+              status: "Delivered",
+              deliveredDate: settlementDate,
+              settlementId: settlement._id,
+              settlementNumber,
+              settlementDate,
+              updatedAt: now,
+            },
+          }
+        );
+      }
+
+      // Update returned parcels as Settled
+      const returnedIds = preview.returnedParcels.map((p) => p.parcelId);
+      if (returnedIds.length > 0) {
+        await Parcel.updateMany(
+          { parcelId: { $in: returnedIds } },
+          {
+            $set: {
+              isSettled: true,
+              settlementId: settlement._id,
+              settlementNumber,
+              settlementDate,
+              updatedAt: now,
+            },
+          }
+        );
+      }
+
+      // Update courier balance
       await CourierCompany.findByIdAndUpdate(data.courierId, {
-        $set: { currentBalance: remainingDue },
+        $set: { currentBalance: remainingDue, updatedAt: now },
       });
-    } catch { }
+
+      // Insert payment into MongoDB
+      if (totalPaymentReceived > 0) {
+        await Payment.create({
+          _id: "pay-" + Date.now(),
+          paymentNumber: initialPaymentNumber,
+          courierId: data.courierId,
+          courierName: preview.courier.name,
+          settlementId: settlement._id,
+          settlementNumber,
+          amount: totalPaymentReceived,
+          cashAmount: cashReceived,
+          onlineAmount: onlineReceived,
+          onlineMethod: (data.paymentMethod as string) || "Bank Transfer",
+          paymentDate: settlementDate,
+          paymentMethod: methodLabel,
+          referenceNumber: data.paymentReference,
+          remarks: `Payment for settlement ${settlementNumber}`,
+          recordedBy: data.preparedBy,
+          createdAt: now,
+        });
+      }
+
+      // Insert ledger entries into MongoDB
+      if (mongoLedgerEntries.length > 0) {
+        await CourierLedgerEntry.insertMany(mongoLedgerEntries);
+      }
+
+      // Sync batch counts in MongoDB
+      const affectedBatchIds = new Set<string>();
+      if (data.batchId) affectedBatchIds.add(data.batchId);
+      preview.eligibleParcels.forEach((p) => { if (p.batchId) affectedBatchIds.add(p.batchId); });
+      preview.returnedParcels.forEach((p) => { if (p.batchId) affectedBatchIds.add(p.batchId); });
+      for (const bId of affectedBatchIds) {
+        await syncBatchCountsMongo(bId);
+      }
+      await syncCourierStatsMongo(data.courierId);
+    } catch (mErr: any) {
+      console.error("MongoDB finalizeSettlement sync error:", mErr);
+    }
   }
 
   return settlement;
 }
+
 
 export async function getSettlements(filters?: {
   courierId?: string;
@@ -2679,7 +2882,7 @@ export async function recordPayment(data: {
 
   const local = readLocalData();
   const dateStr = data.paymentDate.replace(/-/g, "");
-  const paymentNumber = `PAY-${dateStr}-${String(local.payments.length + 1).padStart(3, "0")}`;
+  const paymentNumber = `PAY-${dateStr}-${String(Date.now()).slice(-4)}`;
   const now = new Date().toISOString();
 
   const payment: IPayment = {
@@ -2700,19 +2903,19 @@ export async function recordPayment(data: {
 
   // Update courier balance & ledger
   const targetCourier = local.couriers.find((c) => c._id === data.courierId);
-  const prevBal = targetCourier ? targetCourier.currentBalance || 0 : 0;
+  const prevBal = courier.currentBalance || 0;
 
   if (targetCourier) {
     targetCourier.currentBalance = prevBal - data.amount;
   }
 
-  local.ledger.push({
+  const ledgerEntry = {
     _id: "led-" + Date.now(),
     ledgerId: "LED-" + Date.now().toString().slice(-5),
     courierId: data.courierId,
-    courierName: targetCourier ? targetCourier.name : courier.name,
+    courierName: courier.name,
     transactionDate: data.paymentDate,
-    transactionType: "Payment Received",
+    transactionType: "Payment Received" as any,
     referenceNumber: data.referenceNumber || paymentNumber,
     description: `Ad-hoc payment received: ${data.remarks || ""}`,
     debit: 0,
@@ -2720,9 +2923,29 @@ export async function recordPayment(data: {
     runningBalance: prevBal - data.amount,
     createdBy: data.recordedBy,
     createdAt: now,
-  });
-
+  };
+  local.ledger.push(ledgerEntry);
   writeLocalData(local);
+
+  dbCache.invalidateNamespace("payments");
+  dbCache.invalidateNamespace("ledger");
+  dbCache.invalidateNamespace("couriers");
+  dbCache.invalidateNamespace("dashboard");
+
+  const isMongo = await checkMongoConnection();
+  if (isMongo) {
+    try {
+      await Payment.create(payment);
+      await CourierLedgerEntry.create(ledgerEntry);
+      await CourierCompany.findByIdAndUpdate(data.courierId, {
+        $inc: { currentBalance: -data.amount },
+        $set: { updatedAt: now },
+      });
+    } catch (err: any) {
+      console.warn("MongoDB recordPayment sync warning:", err.message);
+    }
+  }
+
   return payment;
 }
 
@@ -2736,16 +2959,30 @@ export async function recordSettlementPayment(data: {
   remarks?: string;
   recordedBy: string;
 }): Promise<{ settlement: ISettlement; payment: IPayment }> {
+  const isMongo = await checkMongoConnection();
+  let settlement: ISettlement | null = null;
+
+  if (isMongo) {
+    try {
+      const doc = await Settlement.findOne({
+        $or: [{ _id: data.settlementId }, { settlementNumber: data.settlementId }],
+      }).lean();
+      if (doc) settlement = JSON.parse(JSON.stringify(doc));
+    } catch {}
+  }
+
   const local = readLocalData();
   const sIdx = local.settlements.findIndex(
     (s) => s._id === data.settlementId || s.settlementNumber.toLowerCase() === data.settlementId.toLowerCase()
   );
+  if (!settlement && sIdx !== -1) {
+    settlement = local.settlements[sIdx];
+  }
 
-  if (sIdx === -1) {
+  if (!settlement) {
     throw new Error("Settlement statement not found");
   }
 
-  const settlement = local.settlements[sIdx];
   const cash = Math.max(0, Number(data.cashAmount) || 0);
   const online = Math.max(0, Number(data.onlineAmount) || 0);
   const totalPaid = Math.round((cash + online) * 100) / 100;
@@ -2762,7 +2999,7 @@ export async function recordSettlementPayment(data: {
   const now = new Date().toISOString();
   const paymentDate = data.paymentDate || getTodayString();
   const dateStr = paymentDate.replace(/-/g, "");
-  const paymentNumber = `PAY-${dateStr}-${String(local.payments.length + 1).padStart(3, "0")}`;
+  const paymentNumber = `PAY-${dateStr}-${String(Date.now()).slice(-4)}`;
 
   let methodLabel: PaymentMethod = "Bank Transfer";
   if (cash > 0 && online > 0) {
@@ -2782,7 +3019,6 @@ export async function recordSettlementPayment(data: {
   settlement.paymentStatus = newRemainingDue <= 0 ? "Fully Paid" : "Partially Paid";
   settlement.updatedAt = now;
 
-  // Record installment in settlement
   if (!settlement.paymentInstallments) {
     settlement.paymentInstallments = [];
   }
@@ -2801,11 +3037,6 @@ export async function recordSettlementPayment(data: {
   };
   settlement.paymentInstallments.push(installment);
 
-  // Record in payments collection
-  const remarksText = data.remarks
-    ? `Settlement ${settlement.settlementNumber}: ${data.remarks}`
-    : `Payment for settlement ${settlement.settlementNumber} (Cash: Rs. ${cash}, Online: Rs. ${online})`;
-
   const payment: IPayment = {
     _id: "pay-" + Date.now(),
     paymentNumber,
@@ -2820,46 +3051,36 @@ export async function recordSettlementPayment(data: {
     paymentDate,
     paymentMethod: methodLabel,
     referenceNumber: data.referenceNumber || "",
-    remarks: remarksText,
+    remarks: data.remarks || `Payment for settlement ${settlement.settlementNumber} (Cash: Rs. ${cash}, Online: Rs. ${online})`,
     recordedBy: data.recordedBy,
     createdAt: now,
   };
-  local.payments.unshift(payment);
 
-  // Update courier balance & ledger
-  const targetCourier = local.couriers.find((c) => c._id === settlement.courierId);
-  const prevBal = targetCourier ? targetCourier.currentBalance || 0 : 0;
-  const newBal = prevBal - totalPaid;
-
-  if (targetCourier) {
-    targetCourier.currentBalance = newBal;
-    targetCourier.updatedAt = now;
-  }
-
-  local.ledger.push({
+  const ledgerEntry = {
     _id: "led-" + Date.now(),
     ledgerId: "LED-" + Date.now().toString().slice(-5),
     courierId: settlement.courierId,
     courierName: settlement.courierName,
     transactionDate: paymentDate,
-    transactionType: "Payment Received",
+    transactionType: "Payment Received" as any,
     referenceNumber: data.referenceNumber || paymentNumber,
-    description: `Settlement ${settlement.settlementNumber} installment received via ${methodLabel} (Cash: Rs. ${cash}, Online: Rs. ${online})`,
+    description: `Settlement payment received for ${settlement.settlementNumber} (${methodLabel})`,
     debit: 0,
     credit: totalPaid,
-    runningBalance: newBal,
+    runningBalance: newRemainingDue,
     createdBy: data.recordedBy,
     createdAt: now,
-  });
+  };
 
-  local.activityLogs.unshift({
-    _id: "act-" + Date.now(),
-    action: "SETTLEMENT_PAYMENT_COLLECTED",
-    details: `Settlement ${settlement.settlementNumber} payment Rs. ${totalPaid} (Cash: ${cash}, Online: ${online}) recorded by ${data.recordedBy}. Remaining Due: Rs. ${newRemainingDue}`,
-    userName: data.recordedBy,
-    createdAt: now,
-  });
-
+  // Local update
+  if (sIdx !== -1) local.settlements[sIdx] = settlement;
+  local.payments.unshift(payment);
+  local.ledger.push(ledgerEntry);
+  const cIdx = local.couriers.findIndex((c) => c._id === settlement!.courierId);
+  if (cIdx !== -1) {
+    local.couriers[cIdx].currentBalance = Math.max(0, (local.couriers[cIdx].currentBalance || 0) - totalPaid);
+    local.couriers[cIdx].updatedAt = now;
+  }
   writeLocalData(local);
 
   dbCache.invalidateNamespace("settlements");
@@ -2868,30 +3089,30 @@ export async function recordSettlementPayment(data: {
   dbCache.invalidateNamespace("couriers");
   dbCache.invalidateNamespace("dashboard");
 
-  // Sync with MongoDB if available
-  const isMongo = await checkMongoConnection();
   if (isMongo) {
     try {
-      await Settlement.findByIdAndUpdate(settlement._id, {
-        $set: {
-          paymentReceived: settlement.paymentReceived,
-          remainingDue: newRemainingDue,
-          paymentStatus: settlement.paymentStatus,
-          cashReceived: settlement.cashReceived,
-          onlineReceived: settlement.onlineReceived,
-          paymentInstallments: settlement.paymentInstallments,
-          updatedAt: now,
-        },
-      });
-
+      await Settlement.findOneAndUpdate(
+        { $or: [{ _id: settlement._id }, { settlementNumber: settlement.settlementNumber }] },
+        {
+          $set: {
+            paymentReceived: settlement.paymentReceived,
+            remainingDue: newRemainingDue,
+            paymentStatus: settlement.paymentStatus,
+            cashReceived: settlement.cashReceived,
+            onlineReceived: settlement.onlineReceived,
+            paymentInstallments: settlement.paymentInstallments,
+            updatedAt: now,
+          },
+        }
+      );
       await Payment.create(payment);
-
+      await CourierLedgerEntry.create(ledgerEntry);
       await CourierCompany.findByIdAndUpdate(settlement.courierId, {
         $inc: { currentBalance: -totalPaid },
         $set: { updatedAt: now },
       });
-    } catch (mErr) {
-      console.warn("MongoDB sync warning in recordSettlementPayment:", mErr);
+    } catch (mErr: any) {
+      console.warn("MongoDB sync warning in recordSettlementPayment:", mErr.message);
     }
   }
 
@@ -2902,76 +3123,91 @@ export async function deleteSettlement(
   idOrNumber: string,
   userName = "Admin"
 ): Promise<{ success: boolean; settlementNumber: string; parcelsUnlockedCount: number }> {
+  const isMongo = await checkMongoConnection();
+  let settlement: ISettlement | null = null;
+
+  if (isMongo) {
+    try {
+      const doc = await Settlement.findOne({
+        $or: [{ _id: idOrNumber }, { settlementNumber: idOrNumber }],
+      }).lean();
+      if (doc) settlement = JSON.parse(JSON.stringify(doc));
+    } catch {}
+  }
+
   const local = readLocalData();
   const sIdx = local.settlements.findIndex(
     (s) => s._id === idOrNumber || s.settlementNumber.toLowerCase() === idOrNumber.toLowerCase()
   );
+  if (!settlement && sIdx !== -1) {
+    settlement = local.settlements[sIdx];
+  }
 
-  if (sIdx === -1) {
+  if (!settlement) {
     throw new Error("Settlement statement not found");
   }
 
-  const settlement = local.settlements[sIdx];
   const settlementNumber = settlement.settlementNumber;
   const settlementId = settlement._id;
   const courierId = settlement.courierId;
+  const settledIds = settlement.settledParcels || [];
   const now = new Date().toISOString();
 
-  // 1. Unlock all settled parcels associated with this settlement
-  const settledIds = new Set(settlement.settledParcels || []);
-  let unlockedCount = 0;
-  const unlockedParcelIds: string[] = [];
+  let unlockedCount = settledIds.length;
 
+  if (isMongo) {
+    try {
+      await Settlement.findByIdAndDelete(settlementId);
+      await Parcel.updateMany(
+        {
+          $or: [
+            { settlementId },
+            { settlementNumber },
+            { parcelId: { $in: settledIds } },
+          ],
+        },
+        {
+          $set: { isSettled: false },
+          $unset: { settlementId: "", settlementNumber: "", settlementDate: "" },
+        }
+      );
+      await CourierLedgerEntry.deleteMany({ referenceNumber: settlementNumber });
+      await Payment.deleteMany({
+        $or: [{ settlementId }, { settlementNumber }],
+      });
+
+      // Recalculate courier balance from remaining settlements
+      const remainingSettlements = await Settlement.find({ courierId }).lean();
+      const newBalance = remainingSettlements.reduce((sum: number, s: any) => sum + (s.remainingDue || 0), 0);
+      await CourierCompany.findByIdAndUpdate(courierId, {
+        $set: { currentBalance: newBalance, updatedAt: now },
+      });
+      await syncCourierStatsMongo(courierId);
+    } catch (err: any) {
+      console.error("deleteSettlement Mongo error:", err);
+    }
+  }
+
+  // Update local
+  if (sIdx !== -1) local.settlements.splice(sIdx, 1);
   for (const parcel of local.parcels) {
     if (
       parcel.settlementId === settlementId ||
       parcel.settlementNumber === settlementNumber ||
-      settledIds.has(parcel.parcelId)
+      settledIds.includes(parcel.parcelId)
     ) {
       parcel.isSettled = false;
       delete (parcel as any).settlementId;
       delete (parcel as any).settlementNumber;
       delete (parcel as any).settlementDate;
-      parcel.updatedAt = now;
-      unlockedCount++;
-      unlockedParcelIds.push(parcel.parcelId);
     }
   }
-
-  // 2. Remove ledger entries generated for this settlement
   local.ledger = local.ledger.filter((l) => l.referenceNumber !== settlementNumber);
-
-  // 3. Remove payment records generated for this settlement
   local.payments = local.payments.filter(
     (p) => p.settlementId !== settlementId && p.settlementNumber !== settlementNumber
   );
-
-  // 4. Remove the settlement itself
-  local.settlements.splice(sIdx, 1);
-
-  // 5. Recalculate courier balance & stats
-  const cIdx = local.couriers.findIndex((c) => c._id === courierId);
-  if (cIdx !== -1) {
-    const remainingDueForCourier = local.settlements
-      .filter((s) => s.courierId === courierId)
-      .reduce((sum, s) => sum + (s.remainingDue || 0), 0);
-    local.couriers[cIdx].currentBalance = remainingDueForCourier;
-    local.couriers[cIdx].updatedAt = now;
-    recalculateCourierStats(local, courierId);
-  }
-
-  // 6. Log activity
-  local.activityLogs.unshift({
-    _id: "act-" + Date.now(),
-    action: "SETTLEMENT_DELETED",
-    details: `Deleted settlement statement ${settlementNumber} for ${settlement.courierName}. ${unlockedCount} parcels unlocked and returned to unsettled status.`,
-    userName,
-    createdAt: now,
-  });
-
   writeLocalData(local);
 
-  // Invalidate all related caches
   dbCache.invalidateNamespace("settlements");
   dbCache.invalidateNamespace("ledger");
   dbCache.invalidateNamespace("parcels");
@@ -2980,36 +3216,9 @@ export async function deleteSettlement(
   dbCache.invalidateNamespace("couriers");
   dbCache.invalidateNamespace("payments");
 
-  // Sync to MongoDB if connected
-  const isMongo = await checkMongoConnection();
-  if (isMongo) {
-    try {
-      await Settlement.findByIdAndDelete(settlementId);
-      if (unlockedParcelIds.length > 0) {
-        await Parcel.updateMany(
-          { parcelId: { $in: unlockedParcelIds } },
-          {
-            $set: { isSettled: false },
-            $unset: { settlementId: "", settlementNumber: "", settlementDate: "" },
-          }
-        );
-      }
-      await CourierLedgerEntry.deleteMany({ referenceNumber: settlementNumber });
-      await Payment.deleteMany({
-        $or: [{ settlementId }, { settlementNumber }],
-      });
-      if (cIdx !== -1) {
-        await CourierCompany.findByIdAndUpdate(courierId, {
-          $set: { currentBalance: local.couriers[cIdx].currentBalance },
-        });
-      }
-    } catch (mErr) {
-      console.warn("MongoDB deleteSettlement sync warning:", mErr);
-    }
-  }
-
   return { success: true, settlementNumber, parcelsUnlockedCount: unlockedCount };
 }
+
 
 // -------------------------------------------------------------
 // COURIER LEDGER SERVICES
@@ -3152,8 +3361,81 @@ export async function getDashboardStats(filters?: {
   const cached = dbCache.get<any>(cacheKey, "dashboard");
   if (cached) return cached;
 
-  const local = readLocalData();
   const today = getTodayString();
+  const isMongo = await checkMongoConnection();
+
+  if (isMongo) {
+    try {
+      const q: any = {};
+      if (filters?.courierId) q.courierId = filters.courierId;
+      if (filters?.startDate || filters?.endDate) {
+        q.dispatchDate = {};
+        if (filters.startDate) q.dispatchDate.$gte = filters.startDate;
+        if (filters.endDate) q.dispatchDate.$lte = filters.endDate;
+      }
+      const allParcels = await Parcel.find(q).lean();
+      const couriersList = await CourierCompany.find(filters?.courierId ? { _id: filters.courierId } : {}).lean();
+      const recentBatches = await Batch.find({}).sort({ createdAt: -1 }).limit(5).lean();
+      const recentParcels = await Parcel.find({}).sort({ createdAt: -1 }).limit(8).lean();
+
+      const dispatchedToday = allParcels.filter(
+        (p: any) => p.dispatchDate === today && (!filters?.courierId || p.courierId === filters.courierId)
+      ).length;
+      const totalDelivered = allParcels.filter((p: any) => p.status === "Delivered").length;
+      const totalReturned = allParcels.filter(
+        (p: any) => p.status === "Returned to Warehouse" || p.status === "Return Initiated"
+      ).length;
+      const pendingParcels = allParcels.filter(
+        (p: any) => p.status === "With Courier" || p.status === "Pending Verification"
+      ).length;
+      const failedParcels = allParcels.filter((p: any) => p.status === "Delivery Attempt Failed").length;
+      const deliveredParcels = allParcels.filter((p: any) => p.status === "Delivered");
+      const totalCodCollected = deliveredParcels.reduce((sum: number, p: any) => sum + (p.codAmount || 0), 0);
+      const totalDeliveryCharges = allParcels.reduce((sum: number, p: any) => sum + (p.deliveryCharge || 0), 0);
+      const totalOutstanding = couriersList.reduce((sum: number, c: any) => sum + (c.currentBalance || 0), 0);
+
+      const courierPerformance = couriersList.map((c: any) => {
+        const cParcels = allParcels.filter((p: any) => p.courierId === c._id);
+        const cDelivered = cParcels.filter((p: any) => p.status === "Delivered");
+        const cReturned = cParcels.filter((p: any) => p.status === "Returned to Warehouse");
+        const cCod = cDelivered.reduce((sum: number, p: any) => sum + (p.codAmount || 0), 0);
+        const deliveryRate = cParcels.length > 0 ? Math.round((cDelivered.length / cParcels.length) * 100) : 0;
+        return {
+          _id: c._id,
+          name: c.name,
+          contactPerson: c.contactPerson,
+          phone: c.phone,
+          totalDispatched: cParcels.length,
+          delivered: cDelivered.length,
+          returned: cReturned.length,
+          deliveryRate,
+          totalCod: cCod,
+          outstanding: c.currentBalance || 0,
+          isActive: c.isActive,
+        };
+      });
+
+      const stats = {
+        dispatchedToday,
+        totalDelivered,
+        totalReturned,
+        pendingParcels,
+        failedParcels,
+        totalCodCollected,
+        totalDeliveryCharges,
+        totalOutstanding,
+        courierPerformance,
+        recentBatches: JSON.parse(JSON.stringify(recentBatches)),
+        recentParcels: JSON.parse(JSON.stringify(recentParcels)),
+      };
+      dbCache.set(cacheKey, stats, "dashboard", 30);
+      return stats;
+    } catch (err: any) {
+      console.warn("MongoDB getDashboardStats error:", err.message);
+    }
+  }
+
+  const local = readLocalData();
 
   let parcels = local.parcels;
   if (filters?.courierId) {
@@ -3236,6 +3518,7 @@ export async function getDashboardStats(filters?: {
   dbCache.set(cacheKey, stats, "dashboard", 60);
   return stats;
 }
+
 
 export async function crawlAndPreWarmCache(
   trigger: "STARTUP" | "MANUAL" | "SCHEDULED" | "AUTO" = "MANUAL"
@@ -3436,14 +3719,28 @@ export const updateSystemSettings = updateCompanySettings;
 export async function getCourierLedgerSummary(courierId?: string) {
   const couriers = await getCouriers();
   const targetCouriers = courierId ? couriers.filter((c) => c._id === courierId) : couriers;
+  const isMongo = await checkMongoConnection();
+
+  let allParcels: IParcel[] = [];
+  if (isMongo) {
+    try {
+      const q: any = courierId ? { courierId } : {};
+      const docs = await Parcel.find(q).lean();
+      allParcels = JSON.parse(JSON.stringify(docs));
+    } catch {}
+  }
+
   const local = readLocalData();
+  if (allParcels.length === 0) {
+    allParcels = local.parcels;
+  }
 
   return targetCouriers.map((c) => {
-    const cParcels = local.parcels.filter((p) => p.courierId === c._id);
+    const cParcels = allParcels.filter((p) => p.courierId === c._id);
     const delivered = cParcels.filter((p) => p.status === "Delivered");
     const returned = cParcels.filter((p) => p.status === "Returned to Warehouse");
-    const totalCodAmount = delivered.reduce((sum, p) => sum + p.codAmount, 0);
-    const totalCharges = cParcels.reduce((sum, p) => sum + p.deliveryCharge, 0);
+    const totalCodAmount = delivered.reduce((sum, p) => sum + (p.codAmount || 0), 0);
+    const totalCharges = cParcels.reduce((sum, p) => sum + (p.deliveryCharge || 0), 0);
 
     return {
       courierId: c._id,
@@ -3463,14 +3760,34 @@ export async function getCourierLedgerSummary(courierId?: string) {
 }
 
 export async function getParcelByOrderIdOrTracking(query: string): Promise<IParcel | null> {
+  const q = query.trim();
+  if (!q) return null;
+
+  const isMongo = await checkMongoConnection();
+  if (isMongo) {
+    try {
+      const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(`^${escaped}$`, "i");
+      const doc = await Parcel.findOne({
+        $or: [
+          { parcelId: regex },
+          { orderId: regex },
+          { externalTrackingId: regex },
+          { customerPhone: q },
+        ],
+      }).lean();
+      if (doc) return JSON.parse(JSON.stringify(doc));
+    } catch {}
+  }
+
   const local = readLocalData();
-  const q = query.trim().toLowerCase();
+  const lower = q.toLowerCase();
   return (
     local.parcels.find(
       (p) =>
-        p.parcelId.toLowerCase() === q ||
-        (p.orderId && p.orderId.toLowerCase() === q) ||
-        (p.externalTrackingId && p.externalTrackingId.toLowerCase() === q) ||
+        p.parcelId.toLowerCase() === lower ||
+        (p.orderId && p.orderId.toLowerCase() === lower) ||
+        (p.externalTrackingId && p.externalTrackingId.toLowerCase() === lower) ||
         p.customerPhone === q
     ) || null
   );
@@ -3519,12 +3836,25 @@ export async function updateParcelRecord(
   data: any,
   user?: any
 ): Promise<IParcel | null> {
+  const isMongo = await checkMongoConnection();
+  let oldParcel: IParcel | null = null;
+
+  if (isMongo) {
+    try {
+      const doc = await Parcel.findOne({ $or: [{ _id: id }, { parcelId: id }] }).lean();
+      if (doc) oldParcel = JSON.parse(JSON.stringify(doc));
+    } catch {}
+  }
+
   const local = readLocalData();
   const idx = local.parcels.findIndex((p) => p._id === id || p.parcelId === id);
-  if (idx === -1) return null;
+  if (!oldParcel && idx !== -1) {
+    oldParcel = local.parcels[idx];
+  }
+
+  if (!oldParcel) return null;
 
   const now = new Date().toISOString();
-  const oldParcel = local.parcels[idx];
   const oldCod = oldParcel.codAmount;
   const newCod = data.codAmount !== undefined ? Number(data.codAmount) || 0 : oldCod;
   const newAdvance = data.advancePayment !== undefined ? Number(data.advancePayment) || 0 : (oldParcel.advancePayment || 0);
@@ -3557,17 +3887,14 @@ export async function updateParcelRecord(
     });
   }
 
-  local.parcels[idx] = updatedParcel;
-
-  // Recalculate batch counts and totals (Total COD, Total Delivery Charges, statuses)
-  if (updatedParcel.batchId) {
-    recalculateBatchCounts(local, updatedParcel.batchId);
+  if (idx !== -1) {
+    local.parcels[idx] = updatedParcel;
+  } else {
+    local.parcels.push(updatedParcel);
   }
 
-  // Recalculate courier stats
-  if (updatedParcel.courierId) {
-    recalculateCourierStats(local, updatedParcel.courierId);
-  }
+  if (updatedParcel.batchId) recalculateBatchCounts(local, updatedParcel.batchId);
+  if (updatedParcel.courierId) recalculateCourierStats(local, updatedParcel.courierId);
 
   local.activityLogs.unshift({
     _id: "act-" + Date.now(),
@@ -3579,7 +3906,6 @@ export async function updateParcelRecord(
 
   writeLocalData(local);
 
-  const isMongo = await checkMongoConnection();
   if (isMongo) {
     try {
       await Parcel.findOneAndUpdate(
@@ -3588,31 +3914,23 @@ export async function updateParcelRecord(
         { new: true }
       );
       if (updatedParcel.batchId) {
-        const batch = local.batches.find((b) => b.batchId === updatedParcel.batchId);
-        if (batch) {
-          await Batch.findOneAndUpdate({ batchId: batch.batchId }, batch);
-        }
+        await syncBatchCountsMongo(updatedParcel.batchId);
       }
-    } catch { }
+      if (updatedParcel.courierId) {
+        await syncCourierStatsMongo(updatedParcel.courierId);
+      }
+    } catch {}
   }
 
-  // Invalidate cache and update phone index
   dbCache.invalidateNamespace("parcels");
   dbCache.invalidateNamespace("batches");
   dbCache.invalidateNamespace("dashboard");
   dbCache.invalidateNamespace("couriers");
   dbCache.invalidateNamespace("customers");
-  if (updatedParcel.customerPhone) {
-    dbCache.setCustomerPhone(updatedParcel.customerPhone, {
-      name: updatedParcel.customerName || "",
-      address: updatedParcel.customerAddress || "",
-      deliveryArea: updatedParcel.deliveryArea || "Inside Valley",
-      lastParcelId: updatedParcel.parcelId,
-    });
-  }
 
   return updatedParcel;
 }
+
 
 export async function getActivityLogs(page: number = 1, limit: number = 25) {
   const local = readLocalData();
