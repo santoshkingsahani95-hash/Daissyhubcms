@@ -181,7 +181,10 @@ export default function ReturnManagementPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.parcels) {
-          setBatchParcels(data.parcels);
+          const sorted = [...data.parcels].sort((a: any, b: any) =>
+            (a.parcelId || "").localeCompare(b.parcelId || "", undefined, { numeric: true, sensitivity: "base" })
+          );
+          setBatchParcels(sorted);
         } else {
           setBatchParcels([]);
         }

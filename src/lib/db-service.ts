@@ -1637,10 +1637,16 @@ export async function getParcels(filters?: {
         if (filters.endDate) query.dispatchDate.$lte = filters.endDate;
       }
       const parcels = await Parcel.find(query)
-        .sort({ createdAt: -1 })
+        .sort(filters?.batchId ? { parcelId: 1, createdAt: 1 } : { createdAt: -1 })
         .limit(filters?.limit || 1000)
         .lean();
-      return JSON.parse(JSON.stringify(parcels));
+      const parsedParcels: IParcel[] = JSON.parse(JSON.stringify(parcels));
+      if (filters?.batchId) {
+        parsedParcels.sort((a, b) =>
+          (a.parcelId || "").localeCompare(b.parcelId || "", undefined, { numeric: true, sensitivity: "base" })
+        );
+      }
+      return parsedParcels;
     } catch { }
   }
 
@@ -1677,9 +1683,12 @@ export async function getParcels(filters?: {
     );
   }
 
-  const sorted = parcels.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  const sorted = parcels.sort((a, b) => {
+    if (filters?.batchId) {
+      return (a.parcelId || "").localeCompare(b.parcelId || "", undefined, { numeric: true, sensitivity: "base" });
+    }
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   return filters?.limit ? sorted.slice(0, filters.limit) : sorted;
 }

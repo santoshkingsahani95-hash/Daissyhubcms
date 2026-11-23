@@ -111,7 +111,10 @@ export default function ParcelBatchesPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.parcels) {
-          setReturnModalParcels(data.parcels);
+          const sorted = [...data.parcels].sort((a: IParcel, b: IParcel) =>
+            (a.parcelId || "").localeCompare(b.parcelId || "", undefined, { numeric: true, sensitivity: "base" })
+          );
+          setReturnModalParcels(sorted);
         }
       })
       .catch(console.error);
@@ -161,7 +164,10 @@ export default function ParcelBatchesPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.parcels) {
-          setBatchParcels(data.parcels);
+          const sorted = [...data.parcels].sort((a: IParcel, b: IParcel) =>
+            (a.parcelId || "").localeCompare(b.parcelId || "", undefined, { numeric: true, sensitivity: "base" })
+          );
+          setBatchParcels(sorted);
         }
       })
       .catch(console.error)
@@ -179,8 +185,11 @@ export default function ParcelBatchesPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.parcels) {
+          const sorted = [...data.parcels].sort((a: IParcel, b: IParcel) =>
+            (a.parcelId || "").localeCompare(b.parcelId || "", undefined, { numeric: true, sensitivity: "base" })
+          );
           setEditParcels(
-            data.parcels.map((p: IParcel) => ({
+            sorted.map((p: IParcel) => ({
               _id: p._id,
               parcelId: p.parcelId,
               customerName: p.customerName || "",

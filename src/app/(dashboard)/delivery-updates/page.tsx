@@ -89,7 +89,10 @@ export default function DeliveryUpdatesPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.parcels) {
-          setParcels(data.parcels);
+          const sorted = [...data.parcels].sort((a: any, b: any) =>
+            (a.parcelId || "").localeCompare(b.parcelId || "", undefined, { numeric: true, sensitivity: "base" })
+          );
+          setParcels(sorted);
         }
       })
       .catch(console.error)
@@ -193,7 +196,10 @@ export default function DeliveryUpdatesPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.parcels) {
-          setParcels(data.parcels);
+          const sorted = [...data.parcels].sort((a: any, b: any) =>
+            (a.parcelId || "").localeCompare(b.parcelId || "", undefined, { numeric: true, sensitivity: "base" })
+          );
+          setParcels(sorted);
         }
       });
   };
