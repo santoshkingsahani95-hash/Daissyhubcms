@@ -21,9 +21,13 @@ import {
   Trash2,
   Smartphone,
   Check,
+  MapPin,
+  Plus,
+  Compass,
+  Search,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { ICompanySettings } from "@/types";
+import { ICompanySettings, IOutsideValleyRate } from "@/types";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<ICompanySettings>({
@@ -54,6 +58,110 @@ export default function SettingsPage() {
   const [benchmarking, setBenchmarking] = useState(false);
   const [clearingCache, setClearingCache] = useState(false);
   const [benchResult, setBenchResult] = useState<any>(null);
+
+  // Outside Valley Rates State
+  const [outsideRates, setOutsideRates] = useState<IOutsideValleyRate[]>([]);
+  const [loadingRates, setLoadingRates] = useState(false);
+  const [rateSearch, setRateSearch] = useState("");
+  const [newPlaceName, setNewPlaceName] = useState("");
+  const [newDeliveryCharge, setNewDeliveryCharge] = useState("150");
+  const [newRemarks, setNewRemarks] = useState("");
+  const [addingRate, setAddingRate] = useState(false);
+  const [editingRateId, setEditingRateId] = useState<string | null>(null);
+  const [editPlaceCharge, setEditPlaceCharge] = useState("");
+
+  const fetchOutsideRates = () => {
+    setLoadingRates(true);
+    fetch("/api/outside-rates")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.rates) {
+          setOutsideRates(data.rates);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoadingRates(false));
+  };
+
+  useEffect(() => {
+    fetchOutsideRates();
+  }, []);
+
+  const handleAddRate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPlaceName.trim()) {
+      toast.error("Please enter a place name");
+      return;
+    }
+    const charge = Number(newDeliveryCharge);
+    if (isNaN(charge) || charge < 0) {
+      toast.error("Please enter a valid delivery charge (Rs.)");
+      return;
+    }
+
+    setAddingRate(true);
+    try {
+      const res = await fetch("/api/outside-rates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          placeName: newPlaceName.trim(),
+          deliveryCharge: charge,
+          remarks: newRemarks.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message);
+      toast.success(data.message || "Place and rate added successfully!");
+      setOutsideRates(data.rates || []);
+      setNewPlaceName("");
+      setNewDeliveryCharge("150");
+      setNewRemarks("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add place rate");
+    } finally {
+      setAddingRate(false);
+    }
+  };
+
+  const handleDeleteRate = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to remove "${name}" from outside valley rates?`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/outside-rates?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message);
+      toast.success(data.message || `Removed "${name}"`);
+      setOutsideRates(data.rates || []);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete place rate");
+    }
+  };
+
+  const handleSaveInlineCharge = async (id: string) => {
+    const charge = Number(editPlaceCharge);
+    if (isNaN(charge) || charge < 0) {
+      toast.error("Please enter a valid delivery charge");
+      return;
+    }
+    try {
+      const res = await fetch("/api/outside-rates", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, deliveryCharge: charge }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message);
+      toast.success("Delivery charge updated!");
+      setOutsideRates(data.rates || []);
+      setEditingRateId(null);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update charge");
+    }
+  };
 
   useEffect(() => {
     fetch("/api/settings")
@@ -518,6 +626,217 @@ export default function SettingsPage() {
               onChange={(e) => setSettings({ ...settings, billFooterNotice: e.target.value })}
               className="w-full text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 p-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+        </div>
+
+        {/* Outside Valley Delivery Rates Management Card */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                <Compass className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Outside Valley Delivery Rates by Destination Place</span>
+                  <span className="text-[10px] bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-semibold px-2 py-0.5 rounded-full">
+                    {outsideRates.length} Places Active
+                  </span>
+                </h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  विभिन्न सहर तथा ठाउँ अनुसारको डेलिभरी शुल्क सेट गर्नुहोस्। Outside Valley Courier छान्दा ठेगाना अनुसार यो रेट स्वतः लोड हुनेछ।
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Add New Place Form */}
+          <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 space-y-3">
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <Plus className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Add / Update Destination Place & Delivery Rate</span>
+            </span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+              <div className="sm:col-span-5">
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  Place / City / Hub Name <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={newPlaceName}
+                    onChange={(e) => setNewPlaceName(e.target.value)}
+                    placeholder="e.g. Pokhara, Biratnagar, Dharan, Butwal"
+                    className="w-full text-xs font-semibold pl-8 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  Delivery Charge (Rs.) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="text-xs font-bold text-slate-400 absolute left-3 top-2">Rs.</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={newDeliveryCharge}
+                    onChange={(e) => setNewDeliveryCharge(e.target.value)}
+                    placeholder="150"
+                    className="w-full text-xs font-bold pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-4">
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  Hub / Remarks (Optional)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newRemarks}
+                    onChange={(e) => setNewRemarks(e.target.value)}
+                    placeholder="e.g. Kaski Hub / Main City"
+                    className="flex-1 text-xs pl-3 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    disabled={addingRate || !newPlaceName.trim()}
+                    onClick={handleAddRate}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{addingRate ? "Adding..." : "Add Rate"}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Search & Rates Table */}
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="relative max-w-xs w-full">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  value={rateSearch}
+                  onChange={(e) => setRateSearch(e.target.value)}
+                  placeholder="Search place, city or hub..."
+                  className="w-full text-xs pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <span className="text-[11px] text-slate-500">
+                Tip: Click on any delivery charge to edit it directly.
+              </span>
+            </div>
+
+            <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+              <div className="max-h-64 overflow-y-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase text-[10px] tracking-wider sticky top-0">
+                    <tr>
+                      <th className="py-2.5 px-3">#</th>
+                      <th className="py-2.5 px-4">Place / Destination City</th>
+                      <th className="py-2.5 px-4">Delivery Rate</th>
+                      <th className="py-2.5 px-4">Hub / District Info</th>
+                      <th className="py-2.5 px-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {outsideRates
+                      .filter((r) =>
+                        r.placeName.toLowerCase().includes(rateSearch.toLowerCase()) ||
+                        (r.remarks && r.remarks.toLowerCase().includes(rateSearch.toLowerCase()))
+                      )
+                      .map((rate, idx) => {
+                        const isEditing = editingRateId === rate.id;
+                        return (
+                          <tr
+                            key={rate.id}
+                            className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                          >
+                            <td className="py-2 px-3 text-slate-400 font-mono text-[11px]">
+                              {idx + 1}
+                            </td>
+                            <td className="py-2 px-4 font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                              <MapPin className="w-3 h-3 text-indigo-500 shrink-0" />
+                              <span>{rate.placeName}</span>
+                            </td>
+                            <td className="py-2 px-4">
+                              {isEditing ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-semibold text-slate-400">Rs.</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={editPlaceCharge}
+                                    onChange={(e) => setEditPlaceCharge(e.target.value)}
+                                    className="w-20 px-2 py-1 text-xs font-bold rounded border border-indigo-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                                    autoFocus
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSaveInlineCharge(rate.id)}
+                                    className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-semibold"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingRateId(null)}
+                                    className="px-1.5 py-1 text-slate-400 hover:text-slate-600 text-[11px]"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingRateId(rate.id);
+                                    setEditPlaceCharge(rate.deliveryCharge.toString());
+                                  }}
+                                  className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 px-2.5 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800/60 font-mono transition-all text-xs"
+                                  title="Click to edit rate"
+                                >
+                                  <span>Rs. {rate.deliveryCharge}</span>
+                                  <span className="text-[10px] text-emerald-500 opacity-60">✎</span>
+                                </button>
+                              )}
+                            </td>
+                            <td className="py-2 px-4 text-slate-500 text-[11px]">
+                              {rate.remarks || "—"}
+                            </td>
+                            <td className="py-2 px-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteRate(rate.id, rate.placeName)}
+                                title={`Delete ${rate.placeName}`}
+                                className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    {outsideRates.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="py-6 text-center text-slate-400 text-xs">
+                          No outside valley delivery rates configured yet. Add your first place above.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 

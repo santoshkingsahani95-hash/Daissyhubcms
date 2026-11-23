@@ -15,6 +15,12 @@ export interface ISystemSettingDocument extends Document {
   defaultChargeOutsideValley: number;
   defaultReturnChargeInsideValley: number;
   defaultReturnChargeOutsideValley: number;
+  outsideValleyRates?: Array<{
+    id: string;
+    placeName: string;
+    deliveryCharge: number;
+    remarks?: string;
+  }>;
   updatedBy?: {
     _id: string;
     name: string;
@@ -54,6 +60,14 @@ const SystemSettingSchema = new Schema<any>(
     defaultChargeOutsideValley: { type: Number, default: 150 },
     defaultReturnChargeInsideValley: { type: Number, default: 35 },
     defaultReturnChargeOutsideValley: { type: Number, default: 75 },
+    outsideValleyRates: [
+      {
+        id: { type: String },
+        placeName: { type: String, required: true },
+        deliveryCharge: { type: Number, required: true, default: 150 },
+        remarks: { type: String, default: "" },
+      },
+    ],
     updatedBy: {
       _id: { type: String },
       name: { type: String },

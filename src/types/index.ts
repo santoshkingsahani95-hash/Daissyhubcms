@@ -73,6 +73,7 @@ export interface ICourierCompany {
   email?: string;
   isActive: boolean;
   serviceArea?: string;
+  isOutsideValley?: boolean;
   defaultDeliveryCharge: number;
   defaultChargeInsideValley?: number;
   defaultChargeOutsideValley?: number;
@@ -327,6 +328,13 @@ export interface ICourierLedgerEntry {
   createdAt: string;
 }
 
+export interface IOutsideValleyRate {
+  id: string;
+  placeName: string;
+  deliveryCharge: number;
+  remarks?: string;
+}
+
 export interface ICompanySettings {
   companyName: string;
   panVatNumber: string;
@@ -345,6 +353,7 @@ export interface ICompanySettings {
   businessName?: string;
   address?: string;
   phone?: string;
+  outsideValleyRates?: IOutsideValleyRate[];
 }
 
 export interface IActivityLog {

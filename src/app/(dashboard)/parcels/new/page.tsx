@@ -19,7 +19,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { ICourierCompany } from "@/types";
+import { ICourierCompany, IOutsideValleyRate } from "@/types";
 import { getCourierBatchPrefix } from "@/lib/utils";
 
 interface ParcelRow {
@@ -53,6 +53,7 @@ export default function BulkParcelEntryPage() {
 
   // Table rows
   const [rows, setRows] = useState<ParcelRow[]>([]);
+  const [outsideRates, setOutsideRates] = useState<IOutsideValleyRate[]>([]);
   const [saving, setSaving] = useState(false);
   const [showPasteModal, setShowPasteModal] = useState(false);
   const [pasteText, setPasteText] = useState("");
@@ -62,6 +63,13 @@ export default function BulkParcelEntryPage() {
   const selectedCourier = useMemo(() => {
     return couriers.find((c) => c._id === selectedCourierId);
   }, [couriers, selectedCourierId]);
+
+  const isOutsideValleyCourier = useMemo(() => {
+    return Boolean(
+      selectedCourier?.isOutsideValley ||
+      selectedCourier?.serviceArea === "Outside Valley"
+    );
+  }, [selectedCourier]);
 
   // Load couriers
   useEffect(() => {
@@ -79,6 +87,15 @@ export default function BulkParcelEntryPage() {
               deliveryCharge: row.deliveryCharge && row.deliveryCharge !== "0" ? row.deliveryCharge : initialRate,
             }))
           );
+        }
+      })
+      .catch(console.error);
+
+    fetch("/api/outside-rates")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.rates) {
+          setOutsideRates(data.rates);
         }
       })
       .catch(console.error);
@@ -492,20 +509,25 @@ export default function BulkParcelEntryPage() {
 
     setSaving(true);
     try {
+      const isOutside = Boolean(
+        selectedCourier?.isOutsideValley || selectedCourier?.serviceArea === "Outside Valley"
+      );
+      const serviceArea = isOutside ? "Outside Valley" : "Inside Valley";
+
       const res = await fetch("/api/batches", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           courierId: selectedCourierId,
           dispatchDate: batchDate,
-          serviceArea: "Inside Valley",
+          serviceArea: serviceArea,
           notes: batchNotes,
           batchId,
           parcels: parcelsToSave.map((p) => ({
             customerName: p.customerName.trim(),
             customerPhone: p.customerPhone.trim(),
             customerAddress: p.customerAddress.trim(),
-            deliveryArea: "Inside Valley",
+            deliveryArea: serviceArea,
             codAmount: parseFloat(p.codAmount) || 0,
             advancePayment: parseFloat(p.advancePayment) || 0,
             itemSku: p.itemSku.trim(),
@@ -597,11 +619,18 @@ export default function BulkParcelEntryPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80">
           {/* Courier Service */}
           <div>
-            <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-              <Truck className="w-3.5 h-3.5 text-blue-600" />
-              <span>Courier Partner</span>
-              <span className="text-rose-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                <Truck className="w-3.5 h-3.5 text-blue-600" />
+                <span>Courier Partner</span>
+                <span className="text-rose-500">*</span>
+              </label>
+              {isOutsideValleyCourier && (
+                <span className="text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300 font-extrabold px-2 py-0.5 rounded-full border border-purple-300 dark:border-purple-800">
+                  OUTSIDE VALLEY
+                </span>
+              )}
+            </div>
             <div className="relative">
               <select
                 value={selectedCourierId}
@@ -621,10 +650,11 @@ export default function BulkParcelEntryPage() {
                 className="w-full text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 px-3 py-2 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all cursor-pointer"
               >
                 {couriers.map((c) => {
+                  const isOutside = Boolean(c.isOutsideValley || c.serviceArea === "Outside Valley");
                   const rate = c.defaultDeliveryCharge ?? c.defaultChargeInsideValley ?? 0;
                   return (
                     <option key={c._id} value={c._id}>
-                      {c.name} {rate > 0 ? `(Rs. ${rate})` : ""}
+                      {c.name} {isOutside ? "[Outside Valley]" : ""} {rate > 0 ? `(Rs. ${rate})` : ""}
                     </option>
                   );
                 })}
@@ -865,17 +895,72 @@ export default function BulkParcelEntryPage() {
                       })()}
                     </td>
 
-                    {/* Address */}
+                    {/* Address / Destination City */}
                     <td className="py-1.5 px-2">
-                      <input
-                        id={`cell-${idx}-2`}
-                        type="text"
-                        placeholder="Street, Landmark, City"
-                        value={row.customerAddress}
-                        onChange={(e) => updateRow(idx, "customerAddress", e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(e, idx, 2)}
-                        className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200/70 dark:border-slate-700/70 bg-white/70 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none transition-all"
-                      />
+                      {isOutsideValleyCourier ? (
+                        <div className="space-y-1">
+                          <select
+                            value={
+                              outsideRates.find(
+                                (r) =>
+                                  row.customerAddress.toLowerCase().startsWith(r.placeName.toLowerCase()) ||
+                                  row.customerAddress.toLowerCase() === r.placeName.toLowerCase()
+                              )?.placeName || ""
+                            }
+                            onChange={(e) => {
+                              const selectedPlace = e.target.value;
+                              const matched = outsideRates.find((r) => r.placeName === selectedPlace);
+                              if (matched) {
+                                setRows((prev) => {
+                                  const copy = [...prev];
+                                  copy[idx] = {
+                                    ...copy[idx],
+                                    customerAddress: matched.placeName,
+                                    deliveryCharge: matched.deliveryCharge.toString(),
+                                  };
+                                  return copy;
+                                });
+                              }
+                            }}
+                            className="w-full px-2 py-1 text-[11px] font-bold rounded-lg border border-purple-300 dark:border-purple-700 bg-purple-50/70 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 focus:outline-none focus:ring-1 focus:ring-purple-500 cursor-pointer"
+                          >
+                            <option value="">📍 Choose Destination Place...</option>
+                            {outsideRates.map((r) => (
+                              <option key={r.id} value={r.placeName}>
+                                {r.placeName} (Rs. {r.deliveryCharge})
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            id={`cell-${idx}-2`}
+                            type="text"
+                            placeholder="Street, Landmark / Tole"
+                            value={row.customerAddress}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              updateRow(idx, "customerAddress", val);
+                              const matched = outsideRates.find((r) =>
+                                val.toLowerCase().includes(r.placeName.toLowerCase())
+                              );
+                              if (matched) {
+                                updateRow(idx, "deliveryCharge", matched.deliveryCharge.toString());
+                              }
+                            }}
+                            onKeyDown={(e) => handleKeyDown(e, idx, 2)}
+                            className="w-full px-2.5 py-1 text-xs rounded-lg border border-slate-200/70 dark:border-slate-700/70 bg-white/70 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-800 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none transition-all"
+                          />
+                        </div>
+                      ) : (
+                        <input
+                          id={`cell-${idx}-2`}
+                          type="text"
+                          placeholder="Street, Landmark, City"
+                          value={row.customerAddress}
+                          onChange={(e) => updateRow(idx, "customerAddress", e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(e, idx, 2)}
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200/70 dark:border-slate-700/70 bg-white/70 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none transition-all"
+                        />
+                      )}
                     </td>
 
                     {/* SKU / Item */}

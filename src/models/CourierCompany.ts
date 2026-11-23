@@ -9,6 +9,7 @@ export interface ICourierCompanyDocument extends Document {
   email?: string;
   isActive: boolean;
   serviceArea: string;
+  isOutsideValley?: boolean;
   defaultDeliveryCharge: number;
   defaultChargeInsideValley: number;
   defaultChargeOutsideValley: number;
@@ -44,6 +45,7 @@ const CourierCompanySchema = new Schema<any>(
       type: String,
       default: "Inside Valley",
     },
+    isOutsideValley: { type: Boolean, default: false },
     defaultDeliveryCharge: { type: Number, default: 70, min: 0 },
     defaultChargeInsideValley: { type: Number, default: 70, min: 0 },
     defaultChargeOutsideValley: { type: Number, default: 150, min: 0 },

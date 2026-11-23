@@ -27,6 +27,7 @@ import {
   IPayment,
   ICourierLedgerEntry,
   ICompanySettings,
+  IOutsideValleyRate,
   IUser,
   ICustomer,
 } from "@/types";
@@ -65,6 +66,25 @@ function ensureLocalDataDir(): void {
   }
 }
 
+export const DEFAULT_OUTSIDE_VALLEY_RATES: IOutsideValleyRate[] = [
+  { id: "ovr-1", placeName: "Pokhara", deliveryCharge: 120, remarks: "Kaski hub" },
+  { id: "ovr-2", placeName: "Biratnagar", deliveryCharge: 150, remarks: "Morang hub" },
+  { id: "ovr-3", placeName: "Butwal", deliveryCharge: 130, remarks: "Rupandehi hub" },
+  { id: "ovr-4", placeName: "Narayangarh / Chitwan", deliveryCharge: 120, remarks: "Chitwan hub" },
+  { id: "ovr-5", placeName: "Dharan", deliveryCharge: 150, remarks: "Sunsari hub" },
+  { id: "ovr-6", placeName: "Itahari", deliveryCharge: 150, remarks: "Sunsari junction" },
+  { id: "ovr-7", placeName: "Hetauda", deliveryCharge: 120, remarks: "Makwanpur hub" },
+  { id: "ovr-8", placeName: "Bhairahawa", deliveryCharge: 130, remarks: "Rupandehi border hub" },
+  { id: "ovr-9", placeName: "Nepalgunj", deliveryCharge: 160, remarks: "Banke hub" },
+  { id: "ovr-10", placeName: "Birtamode", deliveryCharge: 160, remarks: "Jhapa hub" },
+  { id: "ovr-11", placeName: "Dhangadhi", deliveryCharge: 180, remarks: "Kailali hub" },
+  { id: "ovr-12", placeName: "Janakpur", deliveryCharge: 140, remarks: "Dhanusha hub" },
+  { id: "ovr-13", placeName: "Birgunj", deliveryCharge: 130, remarks: "Parsa hub" },
+  { id: "ovr-14", placeName: "Dang (Ghorahi / Tulsipur)", deliveryCharge: 150, remarks: "Dang hub" },
+  { id: "ovr-15", placeName: "Surkhet", deliveryCharge: 170, remarks: "Karnali hub" },
+  { id: "ovr-16", placeName: "Banepa / Dhulikhel", deliveryCharge: 100, remarks: "Kavre hub" },
+];
+
 const DEFAULT_SETTINGS: ICompanySettings = {
   companyName: "DaisyHub E-Commerce Pvt. Ltd.",
   panVatNumber: "609876543",
@@ -81,6 +101,7 @@ const DEFAULT_SETTINGS: ICompanySettings = {
   defaultChargeOutsideValley: 150,
   defaultReturnChargeInsideValley: 0,
   defaultReturnChargeOutsideValley: 0,
+  outsideValleyRates: DEFAULT_OUTSIDE_VALLEY_RATES,
 };
 
 const INITIAL_COURIERS: ICourierCompany[] = [
@@ -547,8 +568,9 @@ export async function createCourier(
   data: Partial<ICourierCompany>
 ): Promise<ICourierCompany> {
   const isMongo = await checkMongoConnection();
-  const serviceArea = (data.serviceArea as any) || "Inside Valley";
-  const defaultCharge = Number(data.defaultDeliveryCharge) || (serviceArea === "Outside Valley" ? 150 : 70);
+  const isOutside = data.isOutsideValley ?? (data.serviceArea === "Outside Valley");
+  const serviceArea = isOutside ? "Outside Valley" : (data.serviceArea as any || "Inside Valley");
+  const defaultCharge = Number(data.defaultDeliveryCharge) || (isOutside ? 150 : 70);
 
   const newCourier: ICourierCompany = {
     _id: "courier-" + Date.now(),
@@ -559,6 +581,7 @@ export async function createCourier(
     address: data.address || "",
     email: data.email || "",
     isActive: data.isActive !== undefined ? data.isActive : true,
+    isOutsideValley: isOutside,
     serviceArea: serviceArea,
     defaultDeliveryCharge: defaultCharge,
     defaultChargeInsideValley: serviceArea === "Inside Valley" ? defaultCharge : Number(data.defaultChargeInsideValley) || 70,
@@ -617,6 +640,17 @@ export async function updateCourier(
 ): Promise<ICourierCompany | null> {
   const isMongo = await checkMongoConnection();
   const updatePayload: any = { ...data };
+
+  if (updatePayload.isOutsideValley !== undefined) {
+    updatePayload.isOutsideValley = Boolean(updatePayload.isOutsideValley);
+    if (updatePayload.isOutsideValley) {
+      updatePayload.serviceArea = "Outside Valley";
+    } else if (updatePayload.serviceArea === undefined) {
+      updatePayload.serviceArea = "Inside Valley";
+    }
+  } else if (updatePayload.serviceArea) {
+    updatePayload.isOutsideValley = updatePayload.serviceArea === "Outside Valley";
+  }
 
   if (updatePayload.defaultDeliveryCharge !== undefined) {
     const charge = Number(updatePayload.defaultDeliveryCharge);
@@ -3710,8 +3744,30 @@ export async function getCompanySettings(): Promise<ICompanySettings> {
     settings = readLocalData().settings || DEFAULT_SETTINGS;
   }
 
+  if (!settings.outsideValleyRates || settings.outsideValleyRates.length === 0) {
+    settings.outsideValleyRates = DEFAULT_OUTSIDE_VALLEY_RATES;
+  }
+
   dbCache.set("enterprise_settings", settings, "settings", 3600);
   return settings;
+}
+
+export async function getOutsideValleyRates(): Promise<IOutsideValleyRate[]> {
+  const settings = await getCompanySettings();
+  return settings.outsideValleyRates && settings.outsideValleyRates.length > 0
+    ? settings.outsideValleyRates
+    : DEFAULT_OUTSIDE_VALLEY_RATES;
+}
+
+export async function saveOutsideValleyRates(
+  rates: IOutsideValleyRate[]
+): Promise<IOutsideValleyRate[]> {
+  const current = await getCompanySettings();
+  const updated = await updateCompanySettings({
+    ...current,
+    outsideValleyRates: rates,
+  });
+  return updated.outsideValleyRates || rates;
 }
 
 export async function updateCompanySettings(

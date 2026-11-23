@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       address,
       email,
       serviceArea,
+      isOutsideValley,
       defaultDeliveryCharge,
       defaultChargeInsideValley,
       defaultChargeOutsideValley,
@@ -74,8 +75,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const assignedServiceArea = (serviceArea as any) || "Inside Valley";
-    const charge = Number(defaultDeliveryCharge) || 70;
+    const isOutside = Boolean(isOutsideValley || serviceArea === "Outside Valley");
+    const assignedServiceArea = isOutside ? "Outside Valley" : "Inside Valley";
+    const charge = Number(defaultDeliveryCharge) || (isOutside ? 150 : 70);
 
     const newCourier = await createCourier({
       name: name.trim(),
@@ -84,10 +86,11 @@ export async function POST(req: NextRequest) {
       phone: phone?.trim() || "",
       address: address?.trim() || "",
       email: email?.trim() || "",
+      isOutsideValley: isOutside,
       serviceArea: assignedServiceArea,
       defaultDeliveryCharge: charge,
-      defaultChargeInsideValley: charge,
-      defaultChargeOutsideValley: charge,
+      defaultChargeInsideValley: isOutside ? 150 : charge,
+      defaultChargeOutsideValley: isOutside ? charge : 150,
       returnChargeInsideValley: 0,
       returnChargeOutsideValley: 0,
       openingBalance: Number(openingBalance) || 0,

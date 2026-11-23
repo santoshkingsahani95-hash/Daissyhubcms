@@ -30,7 +30,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { IBatch, IParcel, ICourierCompany, ParcelStatus } from "@/types";
+import { IBatch, IParcel, ICourierCompany, ParcelStatus, IOutsideValleyRate } from "@/types";
 import { DateQuickFilter } from "@/components/ui/DateQuickFilter";
 import { BatchReturnsModal } from "@/components/returns/BatchReturnsModal";
 
@@ -66,6 +66,7 @@ export default function ParcelBatchesPage() {
   // Edit Batch & Parcels Modal State
   const [editBatch, setEditBatch] = useState<IBatch | null>(null);
   const [editParcels, setEditParcels] = useState<EditParcelRow[]>([]);
+  const [outsideRates, setOutsideRates] = useState<IOutsideValleyRate[]>([]);
   const [editCourierId, setEditCourierId] = useState("");
   const [editDispatchDate, setEditDispatchDate] = useState("");
   const [editNotes, setEditNotes] = useState("");
@@ -119,6 +120,14 @@ export default function ParcelBatchesPage() {
   useEffect(() => {
     fetchBatches();
     fetchCouriers();
+    fetch("/api/outside-rates")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.rates) {
+          setOutsideRates(data.rates);
+        }
+      })
+      .catch(console.error);
   }, []);
 
   const fetchBatches = () => {
@@ -258,6 +267,13 @@ export default function ParcelBatchesPage() {
     setSavingEditBatch(true);
     try {
       const selectedCourierObj = couriers.find((c) => c._id === editCourierId);
+      const isOutside = Boolean(
+        selectedCourierObj?.isOutsideValley ||
+        selectedCourierObj?.serviceArea === "Outside Valley" ||
+        editBatch.serviceArea === "Outside Valley"
+      );
+      const serviceArea = isOutside ? "Outside Valley" : "Inside Valley";
+
       const res = await fetch(`/api/batches`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -267,7 +283,7 @@ export default function ParcelBatchesPage() {
             courierId: editCourierId,
             courierName: selectedCourierObj?.name || editBatch.courierName,
             dispatchDate: editDispatchDate,
-            serviceArea: "Inside Valley",
+            serviceArea: serviceArea,
             notes: editNotes,
           },
           parcels: validRows.map((p) => ({
@@ -276,11 +292,11 @@ export default function ParcelBatchesPage() {
             customerName: p.customerName.trim(),
             customerPhone: p.customerPhone.trim(),
             customerAddress: p.customerAddress?.trim() || "",
-            deliveryArea: "Inside Valley",
+            deliveryArea: serviceArea,
             itemSku: p.itemSku?.trim() || "",
             codAmount: Number(p.codAmount) || 0,
             advancePayment: Number(p.advancePayment) || 0,
-            deliveryCharge: Number(p.deliveryCharge) || 70,
+            deliveryCharge: Number(p.deliveryCharge) || (isOutside ? 150 : 70),
             remarks: p.remarks?.trim() || "",
             status: p.status || "With Courier",
           })),
@@ -322,6 +338,13 @@ export default function ParcelBatchesPage() {
   const editTotalValue = editTotalCod + editTotalAdvance;
   const editTotalCharges = editParcels.reduce((sum, p) => sum + (Number(p.deliveryCharge) || 0), 0);
   const editNet = editTotalCod - editTotalCharges;
+
+  const selectedEditCourierObj = couriers.find((c) => c._id === editCourierId);
+  const isOutsideValleyEditBatch = Boolean(
+    selectedEditCourierObj?.isOutsideValley ||
+    selectedEditCourierObj?.serviceArea === "Outside Valley" ||
+    editBatch?.serviceArea === "Outside Valley"
+  );
 
   return (
     <div className="space-y-6">
@@ -710,19 +733,29 @@ export default function ParcelBatchesPage() {
               {/* Batch Configuration Strip */}
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                    Courier Partner *
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                      Courier Partner *
+                    </label>
+                    {isOutsideValleyEditBatch && (
+                      <span className="text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300 font-extrabold px-1.5 py-0.2 rounded-full border border-purple-300 dark:border-purple-800 uppercase">
+                        Outside Valley
+                      </span>
+                    )}
+                  </div>
                   <select
                     value={editCourierId}
                     onChange={(e) => setEditCourierId(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
                   >
-                    {couriers.map((c) => (
-                      <option key={c._id} value={c._id}>
-                        {c.name} (Rs. {c.defaultDeliveryCharge || 70})
-                      </option>
-                    ))}
+                    {couriers.map((c) => {
+                      const isOutside = Boolean(c.isOutsideValley || c.serviceArea === "Outside Valley");
+                      return (
+                        <option key={c._id} value={c._id}>
+                          {c.name} {isOutside ? "[Outside Valley]" : ""} (Rs. {c.defaultDeliveryCharge || 70})
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 
@@ -873,15 +906,68 @@ export default function ParcelBatchesPage() {
                             })()}
                           </td>
 
-                          {/* Address / City */}
+                          {/* Address / Destination City */}
                           <td className="py-1.5 px-2">
-                            <input
-                              type="text"
-                              value={p.customerAddress}
-                              onChange={(e) => handleUpdateParcelField(idx, "customerAddress", e.target.value)}
-                              placeholder="Street, Landmark, City"
-                              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                            />
+                            {isOutsideValleyEditBatch ? (
+                              <div className="space-y-1">
+                                <select
+                                  value={
+                                    outsideRates.find(
+                                      (r) =>
+                                        p.customerAddress?.toLowerCase().startsWith(r.placeName.toLowerCase()) ||
+                                        p.customerAddress?.toLowerCase() === r.placeName.toLowerCase()
+                                    )?.placeName || ""
+                                  }
+                                  onChange={(e) => {
+                                    const selectedPlace = e.target.value;
+                                    const matched = outsideRates.find((r) => r.placeName === selectedPlace);
+                                    if (matched) {
+                                      setEditParcels((prev) => {
+                                        const copy = [...prev];
+                                        copy[idx] = {
+                                          ...copy[idx],
+                                          customerAddress: matched.placeName,
+                                          deliveryCharge: matched.deliveryCharge,
+                                        };
+                                        return copy;
+                                      });
+                                    }
+                                  }}
+                                  className="w-full px-2 py-0.5 text-[11px] font-bold rounded border border-purple-300 dark:border-purple-700 bg-purple-50/70 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 focus:outline-none focus:ring-1 focus:ring-purple-500 cursor-pointer"
+                                >
+                                  <option value="">📍 Choose City / Place...</option>
+                                  {outsideRates.map((r) => (
+                                    <option key={r.id} value={r.placeName}>
+                                      {r.placeName} (Rs. {r.deliveryCharge})
+                                    </option>
+                                  ))}
+                                </select>
+                                <input
+                                  type="text"
+                                  value={p.customerAddress}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    handleUpdateParcelField(idx, "customerAddress", val);
+                                    const matched = outsideRates.find((r) =>
+                                      val.toLowerCase().includes(r.placeName.toLowerCase())
+                                    );
+                                    if (matched) {
+                                      handleUpdateParcelField(idx, "deliveryCharge", matched.deliveryCharge);
+                                    }
+                                  }}
+                                  placeholder="Street, Landmark / Tole"
+                                  className="w-full px-2.5 py-1 text-xs rounded-lg border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
+                                />
+                              </div>
+                            ) : (
+                              <input
+                                type="text"
+                                value={p.customerAddress}
+                                onChange={(e) => handleUpdateParcelField(idx, "customerAddress", e.target.value)}
+                                placeholder="Street, Landmark, City"
+                                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                              />
+                            )}
                           </td>
 
                           {/* SKU / Item */}

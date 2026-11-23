@@ -49,6 +49,7 @@ export default function CourierManagementPage() {
     defaultDeliveryCharge: "70",
     openingBalance: "0",
     isActive: true,
+    isOutsideValley: false,
   });
 
   const [saving, setSaving] = useState(false);
@@ -82,6 +83,7 @@ export default function CourierManagementPage() {
       defaultDeliveryCharge: "70",
       openingBalance: "0",
       isActive: true,
+      isOutsideValley: false,
     });
     setShowAddModal(true);
   };
@@ -89,6 +91,7 @@ export default function CourierManagementPage() {
   const handleOpenEdit = (c: ICourierCompany) => {
     setEditingCourier(c);
     const charge = c.defaultDeliveryCharge || c.defaultChargeInsideValley || 70;
+    const isOutside = Boolean(c.isOutsideValley || c.serviceArea === "Outside Valley");
 
     setFormData({
       name: c.name,
@@ -100,6 +103,7 @@ export default function CourierManagementPage() {
       defaultDeliveryCharge: charge.toString(),
       openingBalance: (c.openingBalance || 0).toString(),
       isActive: c.isActive,
+      isOutsideValley: isOutside,
     });
     setShowAddModal(true);
   };
@@ -155,7 +159,10 @@ export default function CourierManagementPage() {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          serviceArea: formData.isOutsideValley ? "Outside Valley" : "Inside Valley",
+        }),
       });
 
       const data = await res.json();
@@ -256,6 +263,15 @@ export default function CourierManagementPage() {
                         >
                           {c.isActive ? "Active" : "Inactive"}
                         </span>
+                        {(c.isOutsideValley || c.serviceArea === "Outside Valley") ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 border border-purple-200">
+                            Outside Valley
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200">
+                            Inside Valley
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
                         <User className="w-3 h-3 text-slate-400" />
@@ -507,6 +523,57 @@ export default function CourierManagementPage() {
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     className="w-full text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+              </div>
+
+              {/* Service Territory / Outside Valley Toggle */}
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/50 space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 cursor-pointer">
+                      <span>Outside Valley Courier (उपत्यका बाहिरको कुरियर)?</span>
+                      {formData.isOutsideValley ? (
+                        <span className="bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-300 dark:border-purple-800">
+                          OUTSIDE VALLEY ACTIVE
+                        </span>
+                      ) : (
+                        <span className="bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-300 dark:border-blue-800">
+                          INSIDE VALLEY ONLY
+                        </span>
+                      )}
+                    </label>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      {formData.isOutsideValley
+                        ? "यो कुरियर उपत्यका बाहिर (Pokhara, Biratnagar, Butwal, etc.) को लागि हो। Batch Entry गर्दा ठेगाना अनुसार फरक-फरक Rate स्वतः आउनेछ।"
+                        : "यो कुरियर काठमाडौं उपत्यका (Kathmandu, Lalitpur, Bhaktapur) भित्रको डेलिभरीको लागि हो।"}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextVal = !formData.isOutsideValley;
+                      setFormData({
+                        ...formData,
+                        isOutsideValley: nextVal,
+                        defaultDeliveryCharge:
+                          nextVal && formData.defaultDeliveryCharge === "70"
+                            ? "150"
+                            : !nextVal && formData.defaultDeliveryCharge === "150"
+                            ? "70"
+                            : formData.defaultDeliveryCharge,
+                      });
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                      formData.isOutsideValley ? "bg-purple-600" : "bg-slate-300 dark:bg-slate-700"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        formData.isOutsideValley ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
 
