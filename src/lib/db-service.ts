@@ -417,9 +417,10 @@ export async function ensureMongoInitialized(): Promise<void> {
     } else {
       // Ensure users exist
       for (const u of local.users) {
+        const { updatedAt, createdAt, ...uWithoutDates } = u as any;
         await User.findOneAndUpdate(
           { username: u.username },
-          { $setOnInsert: u },
+          { $setOnInsert: uWithoutDates },
           { upsert: true }
         );
       }
@@ -544,6 +545,26 @@ export async function getCouriers(): Promise<ICourierCompany[]> {
   if (isMongo) {
     try {
       const list = await CourierCompany.find().sort({ name: 1 }).lean();
+
+      // Auto-reconcile balance with active settlements so direct DB deletions don't cause ghost balances
+      const activeSettlements = await Settlement.find({ paymentStatus: { $ne: "Fully Paid" } }).lean();
+      const settlementBalByCourier = new Map<string, number>();
+      for (const s of activeSettlements as any[]) {
+        if (s.courierId) {
+          const cur = settlementBalByCourier.get(s.courierId) || 0;
+          settlementBalByCourier.set(s.courierId, cur + (s.remainingDue || 0));
+        }
+      }
+      const totalSettlementsCount = await Settlement.countDocuments();
+
+      for (const c of list as any[]) {
+        const expectedBal = settlementBalByCourier.get(c._id) ?? (totalSettlementsCount === 0 ? (c.openingBalance || 0) : 0);
+        if (c.currentBalance !== expectedBal) {
+          c.currentBalance = expectedBal;
+          CourierCompany.findByIdAndUpdate(c._id, { $set: { currentBalance: expectedBal } }).catch(() => {});
+        }
+      }
+
       return JSON.parse(JSON.stringify(list));
     } catch {}
   }
@@ -2771,9 +2792,17 @@ export async function previewSettlement(params: {
   const returnCharges = 0;
   const currentNetReceivable = grossCodCollection - deliveryCharges;
 
-  let previousOutstandingDue = courier.currentBalance || 0;
+  let previousOutstandingDue = 0;
   if (isResettlementMode && existingSettlementNumber) {
-    const existing = local.settlements.find((s) => s.settlementNumber === existingSettlementNumber);
+    let existing: any = null;
+    if (isMongo) {
+      try {
+        existing = await Settlement.findOne({ settlementNumber: existingSettlementNumber }).lean();
+      } catch {}
+    }
+    if (!existing) {
+      existing = local.settlements.find((s) => s.settlementNumber === existingSettlementNumber);
+    }
     if (existing) {
       previousOutstandingDue = existing.previousOutstandingDue || 0;
       existingCashReceived = existing.cashReceived;
@@ -2781,6 +2810,28 @@ export async function previewSettlement(params: {
       existingPaymentMethod = existing.paymentMethod;
       existingPaymentReference = existing.paymentReference;
       existingNotes = existing.notes;
+    }
+  } else {
+    // Dynamically calculate previous outstanding due from actual active unpaid settlements in database
+    if (isMongo) {
+      try {
+        const unpaidSettlements = await Settlement.find({
+          courierId: params.courierId,
+          paymentStatus: { $ne: "Fully Paid" },
+        }).lean();
+        previousOutstandingDue = unpaidSettlements.reduce((sum: number, s: any) => sum + (s.remainingDue || 0), 0);
+      } catch (err: any) {
+        console.warn("MongoDB previewSettlement previous dues error:", err.message);
+      }
+    } else {
+      const unpaidSettlements = local.settlements.filter(
+        (s) => s.courierId === params.courierId && s.paymentStatus !== "Fully Paid"
+      );
+      previousOutstandingDue = unpaidSettlements.reduce((sum, s) => sum + (s.remainingDue || 0), 0);
+    }
+
+    if (previousOutstandingDue === 0 && (courier.openingBalance || 0) > 0) {
+      previousOutstandingDue = courier.openingBalance || 0;
     }
   }
 
@@ -3056,14 +3107,17 @@ export async function finalizeSettlement(data: {
     local.payments.unshift(paymentObj);
   }
 
+  local.settlements.unshift(settlement);
+
   // Update courier balance locally
   const cIdx = local.couriers.findIndex((c) => c._id === data.courierId);
   if (cIdx !== -1) {
-    local.couriers[cIdx].currentBalance = remainingDue;
+    const totalLocalOutstanding = local.settlements
+      .filter((s) => s.courierId === data.courierId && s.paymentStatus !== "Fully Paid")
+      .reduce((sum, s) => sum + (s.remainingDue || 0), 0);
+    local.couriers[cIdx].currentBalance = totalLocalOutstanding;
     local.couriers[cIdx].updatedAt = now;
   }
-
-  local.settlements.unshift(settlement);
 
   for (const pId of settledParcelIds) {
     const idx = local.parcels.findIndex((p) => p.parcelId === pId);
@@ -3135,9 +3189,15 @@ export async function finalizeSettlement(data: {
         );
       }
 
-      // Update courier balance
+      // Update courier balance dynamically based on all unpaid settlements
+      const allActiveSettlements = await Settlement.find({
+        courierId: data.courierId,
+        paymentStatus: { $ne: "Fully Paid" },
+      }).lean();
+      const totalOutstandingBalance = allActiveSettlements.reduce((sum: number, s: any) => sum + (s.remainingDue || 0), 0);
+
       await CourierCompany.findByIdAndUpdate(data.courierId, {
-        $set: { currentBalance: remainingDue, updatedAt: now },
+        $set: { currentBalance: totalOutstandingBalance, updatedAt: now },
       });
 
       // Insert payment into MongoDB
@@ -3737,13 +3797,28 @@ export async function deleteSettlement(
           $unset: { settlementId: "", settlementNumber: "", settlementDate: "" },
         }
       );
-      await CourierLedgerEntry.deleteMany({ referenceNumber: settlementNumber });
+      const cleanNum = settlementNumber.replace(/^#/, "");
+      await CourierLedgerEntry.deleteMany({
+        $or: [
+          { referenceNumber: settlementNumber },
+          { referenceNumber: cleanNum },
+          { referenceNumber: `#${cleanNum}` },
+          { referenceNumber: { $regex: new RegExp(cleanNum, "i") } },
+        ],
+      });
       await Payment.deleteMany({
-        $or: [{ settlementId }, { settlementNumber }],
+        $or: [
+          { settlementId },
+          { settlementNumber },
+          { referenceNumber: { $regex: new RegExp(cleanNum, "i") } },
+        ],
       });
 
       // Recalculate courier balance from remaining settlements
-      const remainingSettlements = await Settlement.find({ courierId }).lean();
+      const remainingSettlements = await Settlement.find({
+        courierId,
+        paymentStatus: { $ne: "Fully Paid" },
+      }).lean();
       const newBalance = remainingSettlements.reduce((sum: number, s: any) => sum + (s.remainingDue || 0), 0);
       await CourierCompany.findByIdAndUpdate(courierId, {
         $set: { currentBalance: newBalance, updatedAt: now },
@@ -3768,10 +3843,20 @@ export async function deleteSettlement(
       delete (parcel as any).settlementDate;
     }
   }
-  local.ledger = local.ledger.filter((l) => l.referenceNumber !== settlementNumber);
+  const cleanNum = settlementNumber.replace(/^#/, "");
+  local.ledger = local.ledger.filter((l) => !l.referenceNumber?.includes(cleanNum));
   local.payments = local.payments.filter(
-    (p) => p.settlementId !== settlementId && p.settlementNumber !== settlementNumber
+    (p) => p.settlementId !== settlementId && !p.settlementNumber?.includes(cleanNum)
   );
+
+  const localRemaining = local.settlements
+    .filter((s) => s.courierId === courierId && s.paymentStatus !== "Fully Paid")
+    .reduce((sum, s) => sum + (s.remainingDue || 0), 0);
+  const cIdx = local.couriers.findIndex((c) => c._id === courierId);
+  if (cIdx !== -1) {
+    local.couriers[cIdx].currentBalance = localRemaining;
+    local.couriers[cIdx].updatedAt = now;
+  }
   writeLocalData(local);
 
   dbCache.invalidateNamespace("settlements");
