@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { dbCache } from "@/lib/cache-service";
 import { crawlAndPreWarmCache } from "@/lib/db-service";
@@ -25,9 +27,15 @@ export async function POST(req: NextRequest) {
     // 1. Clear All Cache
     if (action === "clear") {
       dbCache.clear();
+      try {
+        const snapshotPath = path.join(process.cwd(), ".data", "cache-snapshot.json");
+        if (fs.existsSync(snapshotPath)) {
+          fs.unlinkSync(snapshotPath);
+        }
+      } catch { }
       return NextResponse.json({
         success: true,
-        message: "Database object cache cleared completely.",
+        message: "Database object cache and snapshot cleared completely.",
         metrics: dbCache.getMetrics(),
       });
     }

@@ -99,7 +99,7 @@
       "defaultChargeOutsideValley": 150,
       "returnChargeInsideValley": 0,
       "returnChargeOutsideValley": 0,
-      "openingBalance": "0",
+      "openingBalance": 0,
       "currentBalance": 0,
       "totalParcelsDispatched": 0,
       "totalDelivered": 0,
@@ -123,9 +123,9 @@
       "defaultChargeOutsideValley": 160,
       "returnChargeInsideValley": 0,
       "returnChargeOutsideValley": 0,
-      "openingBalance": "0",
+      "openingBalance": 0,
       "currentBalance": 0,
-      "totalParcelsDispatched": 23,
+      "totalParcelsDispatched": 0,
       "totalDelivered": 0,
       "totalReturned": 0,
       "totalCodCollected": 0,
@@ -147,7 +147,7 @@
       "defaultChargeOutsideValley": 180,
       "returnChargeInsideValley": 0,
       "returnChargeOutsideValley": 0,
-      "openingBalance": "0",
+      "openingBalance": 0,
       "currentBalance": 0,
       "totalParcelsDispatched": 0,
       "totalDelivered": 0,
@@ -171,7 +171,7 @@
       "defaultChargeOutsideValley": 220,
       "returnChargeInsideValley": 0,
       "returnChargeOutsideValley": 0,
-      "openingBalance": "0",
+      "openingBalance": 0,
       "currentBalance": 0,
       "totalParcelsDispatched": 0,
       "totalDelivered": 0,
@@ -183,740 +183,12 @@
       "defaultDeliveryCharge": "220"
     }
   ],
-  "batches": [
-    {
-      "_id": "batch-1795002208212",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "dispatchDate": "2026-11-18",
-      "serviceArea": "Inside Valley",
-      "notes": "",
-      "totalParcels": 23,
-      "totalCodAmount": 30000,
-      "totalAdvancePaid": 0,
-      "totalDeliveryCharges": 1610,
-      "deliveredCount": 0,
-      "failedCount": 0,
-      "returnedCount": 0,
-      "pendingCount": 23,
-      "status": "Active",
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    }
-  ],
-  "parcels": [
-    {
-      "_id": "parcel-1795002208212-0",
-      "parcelId": "DH-20261118-001",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "pramila khadka",
-      "customerPhone": "97007565399",
-      "customerAddress": "KUpan balwakhari",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "264(Blue",
-      "codAmount": 2350,
-      "advancePayment": 0,
-      "totalOrderValue": 2350,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-1",
-      "parcelId": "DH-20261118-002",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Alisha Gururng",
-      "customerPhone": "9704901023",
-      "customerAddress": "dewa chowk nabil bank",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "top and rouse set black , semi formal set top brown , semi formal set",
-      "codAmount": 1550,
-      "advancePayment": 0,
-      "totalOrderValue": 1550,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-2",
-      "parcelId": "DH-20261118-003",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Aayusha Luitel",
-      "customerPhone": "9862954328",
-      "customerAddress": "Sukedhara marg",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "strip t-shirt black",
-      "codAmount": 700,
-      "advancePayment": 0,
-      "totalOrderValue": 700,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-3",
-      "parcelId": "DH-20261118-004",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Srijana tamang",
-      "customerPhone": "9769382340",
-      "customerAddress": "Gokaneshwor ward 4",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "257 black",
-      "codAmount": 1250,
-      "advancePayment": 0,
-      "totalOrderValue": 1250,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-4",
-      "parcelId": "DH-20261118-005",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "chairing",
-      "customerPhone": "9744419210",
-      "customerAddress": "chabahil dental hospital",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "peacoat black",
-      "codAmount": 1550,
-      "advancePayment": 0,
-      "totalOrderValue": 1550,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-5",
-      "parcelId": "DH-20261118-006",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Aayusha",
-      "customerPhone": "9843899280",
-      "customerAddress": "Basundhara herald school",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "hoodie set black",
-      "codAmount": 2550,
-      "advancePayment": 0,
-      "totalOrderValue": 2550,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-6",
-      "parcelId": "DH-20261118-007",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "pari",
-      "customerPhone": "9803580326",
-      "customerAddress": "Nyinba snooker fast food",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "173 green",
-      "codAmount": 800,
-      "advancePayment": 0,
-      "totalOrderValue": 800,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-7",
-      "parcelId": "DH-20261118-008",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Zenisha Dhunganan",
-      "customerPhone": "9842411820",
-      "customerAddress": "tinkune gaurigau",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "strip t shirt black",
-      "codAmount": 700,
-      "advancePayment": 0,
-      "totalOrderValue": 700,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-8",
-      "parcelId": "DH-20261118-009",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "srijana tamang",
-      "customerPhone": "9769382340",
-      "customerAddress": "gokaneshwor ward 4",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "137 white 144 green",
-      "codAmount": 1050,
-      "advancePayment": 0,
-      "totalOrderValue": 1050,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-9",
-      "parcelId": "DH-20261118-010",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Manisha tamang",
-      "customerPhone": "9801096022",
-      "customerAddress": "Dervi Tower new baneshwor",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "leather jacket brown",
-      "codAmount": 1650,
-      "advancePayment": 0,
-      "totalOrderValue": 1650,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-10",
-      "parcelId": "DH-20261118-011",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Chhirirng sherpa",
-      "customerPhone": "9761639926",
-      "customerAddress": "yuba club ktm",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "peacoat black",
-      "codAmount": 1550,
-      "advancePayment": 0,
-      "totalOrderValue": 1550,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-11",
-      "parcelId": "DH-20261118-012",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Apekshya Acharya",
-      "customerPhone": "9810701713",
-      "customerAddress": "pahelopul chabahil ktm",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "peacoat black",
-      "codAmount": 1550,
-      "advancePayment": 0,
-      "totalOrderValue": 1550,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-12",
-      "parcelId": "DH-20261118-013",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "swetha",
-      "customerPhone": "9818450442",
-      "customerAddress": "hariyo pul",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "leather jacket return and exchange",
-      "codAmount": 0,
-      "advancePayment": 0,
-      "totalOrderValue": 0,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-13",
-      "parcelId": "DH-20261118-014",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "soni moktan",
-      "customerPhone": "9823513592",
-      "customerAddress": "bhairavchowk ktm",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "baggy ribtar  4 set brown",
-      "codAmount": 1000,
-      "advancePayment": 0,
-      "totalOrderValue": 1000,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-14",
-      "parcelId": "DH-20261118-015",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "swostika tamang",
-      "customerPhone": "9816184659",
-      "customerAddress": "tamang gumba boudha ktm",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "baggy hoodie bworn",
-      "codAmount": 1550,
-      "advancePayment": 0,
-      "totalOrderValue": 1550,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-15",
-      "parcelId": "DH-20261118-016",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Doma",
-      "customerPhone": "9828847498",
-      "customerAddress": "Boudha ktm",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "Black exchange",
-      "codAmount": 0,
-      "advancePayment": 0,
-      "totalOrderValue": 0,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-16",
-      "parcelId": "DH-20261118-017",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Puspa Adhikari",
-      "customerPhone": "9704609784",
-      "customerAddress": "chabel ganesthan",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "144 black",
-      "codAmount": 1200,
-      "advancePayment": 0,
-      "totalOrderValue": 1200,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-17",
-      "parcelId": "DH-20261118-018",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Shristina thapa magar",
-      "customerPhone": "9707505156",
-      "customerAddress": "Budhanilkantha rudreshwor",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "top adn trouser set black",
-      "codAmount": 1050,
-      "advancePayment": 0,
-      "totalOrderValue": 1050,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-18",
-      "parcelId": "DH-20261118-019",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Supriya tiwari",
-      "customerPhone": "9865592595",
-      "customerAddress": "Dakshindhoka jorpatan",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "semi formal fleece top blue",
-      "codAmount": 650,
-      "advancePayment": 0,
-      "totalOrderValue": 650,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-19",
-      "parcelId": "DH-20261118-020",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Niruta tamang",
-      "customerPhone": "9860005869",
-      "customerAddress": "Gorkhali bridge",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "Tweed Cardigan and skirt 2 grey",
-      "codAmount": 2550,
-      "advancePayment": 0,
-      "totalOrderValue": 2550,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-20",
-      "parcelId": "DH-20261118-021",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Manita",
-      "customerPhone": "9841506687",
-      "customerAddress": "Gokarneshwor suntakhan krishna mandir",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "peacoat black",
-      "codAmount": 1550,
-      "advancePayment": 0,
-      "totalOrderValue": 1550,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-21",
-      "parcelId": "DH-20261118-022",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "surabhistha",
-      "customerPhone": "9763234725",
-      "customerAddress": "Kapan kharibot near CU mark",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "peacoat black , 183 grey",
-      "codAmount": 2300,
-      "advancePayment": 0,
-      "totalOrderValue": 2300,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    },
-    {
-      "_id": "parcel-1795002208212-22",
-      "parcelId": "DH-20261118-023",
-      "batchId": "SE-20261118-001",
-      "courierId": "courier-2",
-      "courierName": "SP Express",
-      "customerName": "Isha shrestha",
-      "customerPhone": "9704583308",
-      "customerAddress": "ryder camera shop",
-      "deliveryArea": "Inside Valley",
-      "itemSku": "183 back",
-      "codAmount": 900,
-      "advancePayment": 0,
-      "totalOrderValue": 900,
-      "deliveryCharge": 70,
-      "remarks": "",
-      "status": "With Courier",
-      "dispatchDate": "2026-11-18",
-      "statusHistory": [
-        {
-          "newStatus": "With Courier",
-          "timestamp": "2026-11-18T11:43:28.212Z",
-          "updatedBy": "Santosh Sahani",
-          "remarks": "Dispatched in Batch SE-20261118-001"
-        }
-      ],
-      "isSettled": false,
-      "createdAt": "2026-11-18T11:43:28.212Z",
-      "updatedAt": "2026-11-18T11:43:28.212Z"
-    }
-  ],
+  "batches": [],
+  "parcels": [],
   "returns": [],
   "settlements": [],
   "payments": [],
-  "ledger": [
-    {
-      "_id": "led-1794982854823",
-      "ledgerId": "LED-54823",
-      "courierId": "courier-1",
-      "courierName": "Google Express",
-      "transactionDate": "2026-11-18",
-      "transactionType": "Payment Received",
-      "referenceNumber": "nov4555",
-      "description": "Settlement #SET-20261118-001 installment received via Split (Cash + Online) (Cash: Rs. 15000, Online: Rs. 5000)",
-      "debit": 0,
-      "credit": 20000,
-      "runningBalance": 16070,
-      "createdBy": "Santosh Sahani",
-      "createdAt": "2026-11-18T06:20:54.823Z"
-    }
-  ],
+  "ledger": [],
   "settings": {
     "companyName": "DaisyHub E-Commerce Pvt. Ltd.",
     "panVatNumber": "609876543",
@@ -931,7 +203,111 @@
     "defaultChargeInsideValley": 70,
     "defaultChargeOutsideValley": 150,
     "defaultReturnChargeInsideValley": 35,
-    "defaultReturnChargeOutsideValley": 75
+    "defaultReturnChargeOutsideValley": 75,
+    "outsideValleyRates": [
+      {
+        "id": "ovr-1",
+        "placeName": "Pokhara",
+        "deliveryCharge": 120,
+        "remarks": "Kaski hub"
+      },
+      {
+        "id": "ovr-2",
+        "placeName": "Biratnagar",
+        "deliveryCharge": 150,
+        "remarks": "Morang hub"
+      },
+      {
+        "id": "ovr-3",
+        "placeName": "Butwal",
+        "deliveryCharge": 130,
+        "remarks": "Rupandehi hub"
+      },
+      {
+        "id": "ovr-4",
+        "placeName": "Narayangarh / Chitwan",
+        "deliveryCharge": 120,
+        "remarks": "Chitwan hub"
+      },
+      {
+        "id": "ovr-5",
+        "placeName": "Dharan",
+        "deliveryCharge": 150,
+        "remarks": "Sunsari hub"
+      },
+      {
+        "id": "ovr-6",
+        "placeName": "Itahari",
+        "deliveryCharge": 150,
+        "remarks": "Sunsari junction"
+      },
+      {
+        "id": "ovr-7",
+        "placeName": "Hetauda",
+        "deliveryCharge": 120,
+        "remarks": "Makwanpur hub"
+      },
+      {
+        "id": "ovr-8",
+        "placeName": "Bhairahawa",
+        "deliveryCharge": 130,
+        "remarks": "Rupandehi border hub"
+      },
+      {
+        "id": "ovr-9",
+        "placeName": "Nepalgunj",
+        "deliveryCharge": 160,
+        "remarks": "Banke hub"
+      },
+      {
+        "id": "ovr-10",
+        "placeName": "Birtamode",
+        "deliveryCharge": 160,
+        "remarks": "Jhapa hub"
+      },
+      {
+        "id": "ovr-11",
+        "placeName": "Dhangadhi",
+        "deliveryCharge": 180,
+        "remarks": "Kailali hub"
+      },
+      {
+        "id": "ovr-12",
+        "placeName": "Janakpur",
+        "deliveryCharge": 140,
+        "remarks": "Dhanusha hub"
+      },
+      {
+        "id": "ovr-13",
+        "placeName": "Birgunj",
+        "deliveryCharge": 130,
+        "remarks": "Parsa hub"
+      },
+      {
+        "id": "ovr-14",
+        "placeName": "Dang (Ghorahi / Tulsipur)",
+        "deliveryCharge": 150,
+        "remarks": "Dang hub"
+      },
+      {
+        "id": "ovr-15",
+        "placeName": "Surkhet",
+        "deliveryCharge": 170,
+        "remarks": "Karnali hub"
+      },
+      {
+        "id": "ovr-16",
+        "placeName": "Banepa / Dhulikhel",
+        "deliveryCharge": 100,
+        "remarks": "Kavre hub"
+      },
+      {
+        "id": "ovr-1795410224086",
+        "placeName": "siraha",
+        "deliveryCharge": 20,
+        "remarks": ""
+      }
+    ]
   },
   "activityLogs": [
     {
