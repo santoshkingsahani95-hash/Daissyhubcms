@@ -213,17 +213,12 @@ export default function ReportsPage() {
       }
       const entry = map.get(bId)!;
       entry.total += 1;
-      if (p.status === "Delivered") {
+      if (p.status === "Returned to Warehouse" || p.status === "Return Initiated") {
+        entry.returned += 1;
+      } else {
         entry.delivered += 1;
         entry.cod += Number(p.codAmount) || 0;
         entry.charges += Number(p.deliveryCharge) || 0;
-      } else if (
-        p.status === "Returned to Warehouse" ||
-        p.status === "Return Initiated"
-      ) {
-        entry.returned += 1;
-      } else {
-        entry.pending += 1;
       }
     }
 
@@ -555,10 +550,12 @@ export default function ReportsPage() {
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
                 Returned: {companySales?.totalReturned || 0} ({companySales?.returnRate || 0}%)
               </span>
-              <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                Pending / In-Transit: {companySales?.totalPending || 0} ({companySales?.pendingRate || 0}%)
-              </span>
+              {(companySales?.totalPending || 0) > 0 && (
+                <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                  Pending / In-Transit: {companySales?.totalPending || 0} ({companySales?.pendingRate || 0}%)
+                </span>
+              )}
             </div>
           </div>
 
@@ -574,11 +571,13 @@ export default function ReportsPage() {
               className="bg-rose-500 h-full transition-all duration-500"
               title={`Returned: ${companySales?.returnRate || 0}%`}
             />
-            <div
-              style={{ width: `${companySales?.pendingRate || 0}%` }}
-              className="bg-amber-400 h-full transition-all duration-500"
-              title={`Pending / In-Transit: ${companySales?.pendingRate || 0}%`}
-            />
+            {(companySales?.pendingRate || 0) > 0 && (
+              <div
+                style={{ width: `${companySales?.pendingRate || 0}%` }}
+                className="bg-amber-400 h-full transition-all duration-500"
+                title={`Pending / In-Transit: ${companySales?.pendingRate || 0}%`}
+              />
+            )}
           </div>
         </div>
       </div>

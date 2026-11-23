@@ -543,7 +543,7 @@ export default function BulkParcelEntryPage() {
       }
 
       toast.success(
-        `Batch ${data.batch.batchId} saved successfully with ${data.parcelsCount} parcels! Status: 'With Courier'.`,
+        `Batch ${data.batch.batchId} saved successfully with ${data.parcelsCount} parcels dispatched to courier!`,
         { duration: 5000 }
       );
 

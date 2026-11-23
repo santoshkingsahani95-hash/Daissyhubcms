@@ -739,21 +739,17 @@ export async function getBatches(filters?: {
   let batches = local.batches.map((b) => {
     const batchParcels = local.parcels.filter((p) => p.batchId === b.batchId);
     if (batchParcels.length > 0) {
-      const delivered = batchParcels.filter((p) => p.status === "Delivered").length;
       const returned = batchParcels.filter(
         (p) => p.status === "Returned to Warehouse" || p.status === "Return Initiated"
       ).length;
-      const failed = batchParcels.filter((p) => p.status === "Delivery Attempt Failed").length;
-      const pending = batchParcels.filter(
-        (p) => p.status === "With Courier" || p.status === "Pending Verification"
-      ).length;
+      const delivered = Math.max(0, batchParcels.length - returned);
       return {
         ...b,
         totalParcels: batchParcels.length,
         deliveredCount: delivered,
         returnedCount: returned,
-        failedCount: failed,
-        pendingCount: pending,
+        failedCount: 0,
+        pendingCount: 0,
         totalCodAmount: batchParcels.reduce((sum, p) => sum + (Number(p.codAmount) || 0), 0),
         totalAdvancePaid: batchParcels.reduce((sum, p) => sum + (Number(p.advancePayment) || 0), 0),
         totalDeliveryCharges: batchParcels.reduce((sum, p) => sum + (Number(p.deliveryCharge) || 0), 0),
@@ -937,10 +933,10 @@ export async function createBatchWithParcels(
     totalCodAmount: totalCod,
     totalAdvancePaid: totalAdvance,
     totalDeliveryCharges: totalDelivery,
-    deliveredCount: 0,
+    deliveredCount: newParcels.length,
     failedCount: 0,
     returnedCount: 0,
-    pendingCount: newParcels.length,
+    pendingCount: 0,
     status: "Active",
     createdAt: now,
     updatedAt: now,
@@ -1907,16 +1903,14 @@ function recalculateBatchCounts(local: LocalDataStore, batchId: string) {
   if (batchIdx === -1) return;
 
   const batchParcels = local.parcels.filter((p) => p.batchId === batchId);
-  const delivered = batchParcels.filter((p) => p.status === "Delivered").length;
-  const failed = batchParcels.filter((p) => p.status === "Delivery Attempt Failed").length;
   const returned = batchParcels.filter((p) => p.status === "Returned to Warehouse" || p.status === "Return Initiated").length;
-  const pending = batchParcels.filter((p) => p.status === "With Courier" || p.status === "Pending Verification").length;
+  const delivered = Math.max(0, batchParcels.length - returned);
 
   local.batches[batchIdx].totalParcels = batchParcels.length;
   local.batches[batchIdx].deliveredCount = delivered;
-  local.batches[batchIdx].failedCount = failed;
+  local.batches[batchIdx].failedCount = 0;
   local.batches[batchIdx].returnedCount = returned;
-  local.batches[batchIdx].pendingCount = pending;
+  local.batches[batchIdx].pendingCount = 0;
   local.batches[batchIdx].totalCodAmount = batchParcels.reduce((sum, p) => sum + (Number(p.codAmount) || 0), 0);
   local.batches[batchIdx].totalAdvancePaid = batchParcels.reduce((sum, p) => sum + (Number(p.advancePayment) || 0), 0);
   local.batches[batchIdx].totalDeliveryCharges = batchParcels.reduce((sum, p) => sum + (Number(p.deliveryCharge) || 0), 0);
@@ -1928,13 +1922,13 @@ function recalculateCourierStats(local: LocalDataStore, courierId: string) {
   if (cIdx === -1) return;
 
   const courierParcels = local.parcels.filter((p) => p.courierId === courierId);
-  const delivered = courierParcels.filter((p) => p.status === "Delivered");
-  const returned = courierParcels.filter((p) => p.status === "Returned to Warehouse");
+  const returned = courierParcels.filter((p) => p.status === "Returned to Warehouse" || p.status === "Return Initiated");
+  const delivered = courierParcels.filter((p) => p.status !== "Returned to Warehouse" && p.status !== "Return Initiated");
 
   local.couriers[cIdx].totalParcelsDispatched = courierParcels.length;
   local.couriers[cIdx].totalDelivered = delivered.length;
   local.couriers[cIdx].totalReturned = returned.length;
-  local.couriers[cIdx].totalCodCollected = delivered.reduce((sum, p) => sum + p.codAmount, 0);
+  local.couriers[cIdx].totalCodCollected = delivered.reduce((sum, p) => sum + (Number(p.codAmount) || 0), 0);
 }
 
 export async function syncBatchCountsMongo(batchId: string): Promise<void> {
@@ -1945,14 +1939,10 @@ export async function syncBatchCountsMongo(batchId: string): Promise<void> {
     const batchParcels = await Parcel.find({ batchId }).lean();
     if (!batchParcels || batchParcels.length === 0) return;
 
-    const delivered = batchParcels.filter((p: any) => p.status === "Delivered").length;
     const returned = batchParcels.filter(
       (p: any) => p.status === "Returned to Warehouse" || p.status === "Return Initiated"
     ).length;
-    const failed = batchParcels.filter((p: any) => p.status === "Delivery Attempt Failed").length;
-    const pending = batchParcels.filter(
-      (p: any) => p.status === "With Courier" || p.status === "Pending Verification"
-    ).length;
+    const delivered = Math.max(0, batchParcels.length - returned);
 
     const totalCodAmount = batchParcels.reduce((sum: number, p: any) => sum + (Number(p.codAmount) || 0), 0);
     const totalAdvancePaid = batchParcels.reduce((sum: number, p: any) => sum + (Number(p.advancePayment) || 0), 0);
@@ -1965,8 +1955,8 @@ export async function syncBatchCountsMongo(batchId: string): Promise<void> {
           totalParcels: batchParcels.length,
           deliveredCount: delivered,
           returnedCount: returned,
-          failedCount: failed,
-          pendingCount: pending,
+          failedCount: 0,
+          pendingCount: 0,
           totalCodAmount,
           totalAdvancePaid,
           totalDeliveryCharges,
@@ -1985,11 +1975,11 @@ export async function syncCourierStatsMongo(courierId: string): Promise<void> {
   if (!isMongo) return;
   try {
     const courierParcels = await Parcel.find({ courierId }).lean();
-    const delivered = courierParcels.filter((p: any) => p.status === "Delivered").length;
     const returned = courierParcels.filter(
       (p: any) => p.status === "Returned to Warehouse" || p.status === "Return Initiated"
     ).length;
     const totalParcels = courierParcels.length;
+    const delivered = Math.max(0, totalParcels - returned);
     const successRate = totalParcels > 0 ? Math.round((delivered / totalParcels) * 100) : 0;
 
     await CourierCompany.findByIdAndUpdate(courierId, {
@@ -2567,18 +2557,12 @@ export async function previewSettlement(params: {
   let eligibleParcels = poolParcels.filter((p) => {
     if (p.courierId !== params.courierId) return false;
     if (returnIdSet.has(p.parcelId) || p.status === "Returned to Warehouse" || p.status === "Return Initiated") return false;
-    if (p.status === "Delivery Attempt Failed") return false;
     if (hasBatch && p.batchId !== params.batchId) return false;
     if (!hasBatch && params.startDate && p.dispatchDate < params.startDate) return false;
     if (!hasBatch && params.endDate && p.dispatchDate > params.endDate) return false;
 
-    // When settling a batch, all non-returned parcels in that batch are payable COD collection
-    if (hasBatch) {
-      return params.includeSettled ? true : !p.isSettled;
-    }
-
-    // When settling without batch filter, parcel must be marked Delivered
-    return p.status === "Delivered" && (params.includeSettled ? true : !p.isSettled);
+    // All non-returned parcels are payable COD collection
+    return params.includeSettled ? true : !p.isSettled;
   });
 
   // Resettlement fallback if needed
@@ -2608,8 +2592,7 @@ export async function previewSettlement(params: {
         !returnIdSet.has(p.parcelId) &&
         p.status !== "Returned to Warehouse" &&
         p.status !== "Return Initiated" &&
-        p.status !== "Delivery Attempt Failed" &&
-        (hasBatch ? p.batchId === params.batchId : p.status === "Delivered")
+        (hasBatch ? p.batchId === params.batchId : true)
     );
 
     if (allDelivered.length > 0 || allReturned.length > 0) {
@@ -3831,23 +3814,23 @@ export async function getDashboardStats(filters?: {
       const dispatchedToday = allParcels.filter(
         (p: any) => p.dispatchDate === today && (!filters?.courierId || p.courierId === filters.courierId)
       ).length;
-      const totalDelivered = allParcels.filter((p: any) => p.status === "Delivered").length;
       const totalReturned = allParcels.filter(
         (p: any) => p.status === "Returned to Warehouse" || p.status === "Return Initiated"
       ).length;
-      const pendingParcels = allParcels.filter(
-        (p: any) => p.status === "With Courier" || p.status === "Pending Verification"
-      ).length;
-      const failedParcels = allParcels.filter((p: any) => p.status === "Delivery Attempt Failed").length;
-      const deliveredParcels = allParcels.filter((p: any) => p.status === "Delivered");
+      const totalDelivered = Math.max(0, allParcels.length - totalReturned);
+      const pendingParcels = 0;
+      const failedParcels = 0;
+      const deliveredParcels = allParcels.filter(
+        (p: any) => p.status !== "Returned to Warehouse" && p.status !== "Return Initiated"
+      );
       const totalCodCollected = deliveredParcels.reduce((sum: number, p: any) => sum + (p.codAmount || 0), 0);
       const totalDeliveryCharges = allParcels.reduce((sum: number, p: any) => sum + (p.deliveryCharge || 0), 0);
       const totalOutstanding = couriersList.reduce((sum: number, c: any) => sum + (c.currentBalance || 0), 0);
 
       const courierPerformance = couriersList.map((c: any) => {
         const cParcels = allParcels.filter((p: any) => p.courierId === c._id);
-        const cDelivered = cParcels.filter((p: any) => p.status === "Delivered");
-        const cReturned = cParcels.filter((p: any) => p.status === "Returned to Warehouse");
+        const cReturned = cParcels.filter((p: any) => p.status === "Returned to Warehouse" || p.status === "Return Initiated");
+        const cDelivered = cParcels.filter((p: any) => p.status !== "Returned to Warehouse" && p.status !== "Return Initiated");
         const cCod = cDelivered.reduce((sum: number, p: any) => sum + (p.codAmount || 0), 0);
         const deliveryRate = cParcels.length > 0 ? Math.round((cDelivered.length / cParcels.length) * 100) : 0;
         return {
@@ -3904,20 +3887,18 @@ export async function getDashboardStats(filters?: {
       (!filters?.courierId || p.courierId === filters.courierId)
   ).length;
 
-  const totalDelivered = parcels.filter((p) => p.status === "Delivered").length;
   const totalReturned = parcels.filter(
     (p) => p.status === "Returned to Warehouse" || p.status === "Return Initiated"
   ).length;
-  const pendingParcels = parcels.filter(
-    (p) => p.status === "With Courier" || p.status === "Pending Verification"
-  ).length;
-  const failedParcels = parcels.filter(
-    (p) => p.status === "Delivery Attempt Failed"
-  ).length;
+  const totalDelivered = Math.max(0, parcels.length - totalReturned);
+  const pendingParcels = 0;
+  const failedParcels = 0;
 
-  const deliveredParcels = parcels.filter((p) => p.status === "Delivered");
-  const totalCodCollected = deliveredParcels.reduce((sum, p) => sum + p.codAmount, 0);
-  const totalDeliveryCharges = parcels.reduce((sum, p) => sum + p.deliveryCharge, 0);
+  const deliveredParcels = parcels.filter(
+    (p) => p.status !== "Returned to Warehouse" && p.status !== "Return Initiated"
+  );
+  const totalCodCollected = deliveredParcels.reduce((sum, p) => sum + (p.codAmount || 0), 0);
+  const totalDeliveryCharges = parcels.reduce((sum, p) => sum + (p.deliveryCharge || 0), 0);
 
   // Couriers outstanding
   let couriers = local.couriers;
@@ -3929,9 +3910,9 @@ export async function getDashboardStats(filters?: {
   // Performance by courier
   const courierPerformance = local.couriers.map((c) => {
     const cParcels = local.parcels.filter((p) => p.courierId === c._id);
-    const cDelivered = cParcels.filter((p) => p.status === "Delivered");
-    const cReturned = cParcels.filter((p) => p.status === "Returned to Warehouse");
-    const cCod = cDelivered.reduce((sum, p) => sum + p.codAmount, 0);
+    const cReturned = cParcels.filter((p) => p.status === "Returned to Warehouse" || p.status === "Return Initiated");
+    const cDelivered = cParcels.filter((p) => p.status !== "Returned to Warehouse" && p.status !== "Return Initiated");
+    const cCod = cDelivered.reduce((sum, p) => sum + (p.codAmount || 0), 0);
 
     const deliveryRate =
       cParcels.length > 0 ? Math.round((cDelivered.length / cParcels.length) * 100) : 0;
@@ -4409,10 +4390,10 @@ export async function getCustomers(search?: string, page: number = 1, limit: num
         address: p.customerAddress || "",
         deliveryArea: p.deliveryArea || "Inside Valley",
         totalOrders: 1,
-        deliveredOrders: p.status === "Delivered" ? 1 : 0,
-        pendingOrders: p.status === "With Courier" || p.status === "Pending Verification" ? 1 : 0,
-        returnedOrders: p.status === "Returned to Warehouse" || p.status === "Return Initiated" ? 1 : 0,
-        cancelledOrders: p.status === "Delivery Attempt Failed" ? 1 : 0,
+        deliveredOrders: (p.status !== "Returned to Warehouse" && p.status !== "Return Initiated") ? 1 : 0,
+        pendingOrders: 0,
+        returnedOrders: (p.status === "Returned to Warehouse" || p.status === "Return Initiated") ? 1 : 0,
+        cancelledOrders: 0,
         totalCodAmount: p.codAmount || 0,
         totalAdvancePaid: Number(p.advancePayment) || 0,
         firstOrderDate: p.dispatchDate || p.createdAt,
@@ -4422,10 +4403,11 @@ export async function getCustomers(search?: string, page: number = 1, limit: num
       });
     } else {
       existing.totalOrders += 1;
-      if (p.status === "Delivered") existing.deliveredOrders += 1;
-      if (p.status === "With Courier" || p.status === "Pending Verification") existing.pendingOrders += 1;
-      if (p.status === "Returned to Warehouse" || p.status === "Return Initiated") existing.returnedOrders += 1;
-      if (p.status === "Delivery Attempt Failed") existing.cancelledOrders += 1;
+      if (p.status === "Returned to Warehouse" || p.status === "Return Initiated") {
+        existing.returnedOrders += 1;
+      } else {
+        existing.deliveredOrders += 1;
+      }
       existing.totalCodAmount += p.codAmount || 0;
       existing.totalAdvancePaid = (existing.totalAdvancePaid || 0) + (Number(p.advancePayment) || 0);
       if (p.dispatchDate && (!existing.lastOrderDate || p.dispatchDate > existing.lastOrderDate)) {
@@ -4483,14 +4465,12 @@ export async function getCustomerById(id: string) {
     address: p.customerAddress || "",
     deliveryArea: p.deliveryArea || "Inside Valley",
     totalOrders: matching.length,
-    deliveredOrders: matching.filter((m) => m.status === "Delivered").length,
-    pendingOrders: matching.filter(
-      (m) => m.status === "With Courier" || m.status === "Pending Verification"
-    ).length,
+    deliveredOrders: matching.filter((m) => m.status !== "Returned to Warehouse" && m.status !== "Return Initiated").length,
+    pendingOrders: 0,
     returnedOrders: matching.filter(
       (m) => m.status === "Returned to Warehouse" || m.status === "Return Initiated"
     ).length,
-    cancelledOrders: matching.filter((m) => m.status === "Delivery Attempt Failed").length,
+    cancelledOrders: 0,
     totalCodAmount: matching.reduce((sum, m) => sum + (m.codAmount || 0), 0),
     firstOrderDate: matching[0]?.dispatchDate || new Date().toISOString(),
     lastOrderDate: matching[matching.length - 1]?.dispatchDate || new Date().toISOString(),

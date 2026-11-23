@@ -20,21 +20,17 @@ export async function GET(req: NextRequest) {
     // 0. Executive Sales Dashboard & Courier Progress Mode (Simple & Fast)
     if (type === "dashboard" || type === "sales-dashboard" || type === "executive") {
       const allParcels = await getParcels({ startDate, endDate });
-      const deliveredParcels = allParcels.filter((p) => p.status === "Delivered");
       const returnedParcels = allParcels.filter(
         (p) => p.status === "Returned to Warehouse" || p.status === "Return Initiated"
       );
-      const pendingParcels = allParcels.filter(
-        (p) =>
-          p.status !== "Delivered" &&
-          p.status !== "Returned to Warehouse" &&
-          p.status !== "Return Initiated"
+      const deliveredParcels = allParcels.filter(
+        (p) => p.status !== "Returned to Warehouse" && p.status !== "Return Initiated"
       );
 
       const totalDispatched = allParcels.length;
       const totalDelivered = deliveredParcels.length;
       const totalReturned = returnedParcels.length;
-      const totalPending = pendingParcels.length;
+      const totalPending = 0;
 
       const customerAdvance = allParcels.reduce((sum, p) => sum + (Number(p.advancePayment) || 0), 0);
       const deliveredCod = deliveredParcels.reduce((sum, p) => sum + (Number(p.codAmount) || 0), 0);
@@ -129,16 +125,13 @@ export async function GET(req: NextRequest) {
         const cParcels = allParcels.filter(
           (p) => p.courierId === courierId || (courier && p.courierName === courier.name)
         );
-        const cDelivered = cParcels.filter((p) => p.status === "Delivered");
         const cReturned = cParcels.filter(
           (p) => p.status === "Returned to Warehouse" || p.status === "Return Initiated"
         );
-        const cPending = cParcels.filter(
-          (p) =>
-            p.status !== "Delivered" &&
-            p.status !== "Returned to Warehouse" &&
-            p.status !== "Return Initiated"
+        const cDelivered = cParcels.filter(
+          (p) => p.status !== "Returned to Warehouse" && p.status !== "Return Initiated"
         );
+        const cPending: typeof cParcels = [];
 
         const cCodIncome = cDelivered.reduce((sum, p) => sum + (Number(p.codAmount) || 0), 0);
         const cAdvance = cParcels.reduce((sum, p) => sum + (Number(p.advancePayment) || 0), 0);
@@ -201,9 +194,9 @@ export async function GET(req: NextRequest) {
     if (type === "courier-wise") {
       const result = couriers.map((c) => {
         const cParcels = parcels.filter((p) => p.courierId === c._id);
-        const delivered = cParcels.filter((p) => p.status === "Delivered");
-        const returned = cParcels.filter((p) => p.status === "Returned to Warehouse");
-        const pending = cParcels.filter((p) => p.status === "With Courier" || p.status === "Pending Verification");
+        const returned = cParcels.filter((p) => p.status === "Returned to Warehouse" || p.status === "Return Initiated");
+        const delivered = cParcels.filter((p) => p.status !== "Returned to Warehouse" && p.status !== "Return Initiated");
+        const pending: typeof cParcels = [];
         const totalCod = delivered.reduce((sum, p) => sum + p.codAmount, 0);
         const deliveryCharges = cParcels.reduce((sum, p) => sum + p.deliveryCharge, 0);
 
@@ -242,7 +235,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "cod-collection") {
-      const delivered = parcels.filter((p) => p.status === "Delivered");
+      const delivered = parcels.filter((p) => p.status !== "Returned to Warehouse" && p.status !== "Return Initiated");
       const totalCod = delivered.reduce((sum, p) => sum + p.codAmount, 0);
       const charges = delivered.reduce((sum, p) => sum + p.deliveryCharge, 0);
       return NextResponse.json({

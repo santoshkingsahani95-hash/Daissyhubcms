@@ -493,34 +493,37 @@ export default function ParcelBatchesPage() {
                       {batch.totalParcels}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center justify-center gap-1.5 text-[10px]">
-                        <span
-                          title="Delivered"
-                          className="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-semibold"
-                        >
-                          {batch.deliveredCount || 0} Del
-                        </span>
-                        <span
-                          title="Failed"
-                          className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-semibold"
-                        >
-                          {batch.failedCount || 0} Fail
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleViewBatchReturns(batch)}
-                          title="Click to see return details from courier with this batch ID"
-                          className="px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 font-semibold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors cursor-pointer"
-                        >
-                          {batch.returnedCount || 0} Ret
-                        </button>
-                        <span
-                          title="Awaiting"
-                          className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 font-semibold"
-                        >
-                          {batch.pendingCount || 0} Wait
-                        </span>
-                      </div>
+                      {(() => {
+                        const returned = batch.returnedCount || 0;
+                        const delivered = Math.max(0, (batch.totalParcels || 0) - returned);
+                        return (
+                          <div className="flex items-center justify-center gap-1.5 text-[11px]">
+                            <span
+                              title="Delivered"
+                              className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800"
+                            >
+                              {delivered} Del
+                            </span>
+                            {returned > 0 ? (
+                              <button
+                                type="button"
+                                onClick={() => handleViewBatchReturns(batch)}
+                                title="Click to see return details for this batch"
+                                className="px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 font-bold border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors cursor-pointer"
+                              >
+                                {returned} Ret
+                              </button>
+                            ) : (
+                              <span
+                                title="No Returns"
+                                className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-400 font-medium border border-slate-200 dark:border-slate-700"
+                              >
+                                0 Ret
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 px-4 text-right font-mono font-semibold text-amber-600 dark:text-amber-400">
                       {batch.totalAdvancePaid ? `Rs. ${batch.totalAdvancePaid.toLocaleString("en-IN")}` : "Rs. 0"}
@@ -652,16 +655,12 @@ export default function ParcelBatchesPage() {
                         <td className="py-2 px-3 text-center">
                           <span
                             className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                              p.status === "Delivered"
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : p.status === "Returned to Warehouse"
+                              p.status === "Returned to Warehouse" || p.status === "Return Initiated"
                                 ? "bg-rose-50 text-rose-700 border border-rose-200"
-                                : p.status === "Delivery Attempt Failed"
-                                ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                : "bg-blue-50 text-blue-700 border border-blue-200"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                             }`}
                           >
-                            {p.status}
+                            {p.status === "Returned to Warehouse" || p.status === "Return Initiated" ? "Returned" : "Delivered"}
                           </span>
                         </td>
                       </tr>
@@ -1033,16 +1032,12 @@ export default function ParcelBatchesPage() {
                           <td className="py-1.5 px-2 text-center whitespace-nowrap">
                             <span
                               className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
-                                p.status === "Delivered"
-                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                                  : p.status === "Returned to Warehouse"
+                                p.status === "Returned to Warehouse" || p.status === "Return Initiated"
                                   ? "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
-                                  : p.status === "Delivery Attempt Failed"
-                                  ? "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-                                  : "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                  : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
                               }`}
                             >
-                              {p.status === "Returned to Warehouse" ? "Returned" : p.status || "With Courier"}
+                              {p.status === "Returned to Warehouse" || p.status === "Return Initiated" ? "Returned" : "Delivered"}
                             </span>
                           </td>
 

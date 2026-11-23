@@ -22,17 +22,8 @@ import {
   Save,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { IBatch, IParcel, ICourierCompany, FailureReason } from "@/types";
+import { IBatch, IParcel, ICourierCompany } from "@/types";
 import { DateQuickFilter } from "@/components/ui/DateQuickFilter";
-
-const FAILURE_REASONS: FailureReason[] = [
-  "Customer did not answer",
-  "Wrong phone number",
-  "Customer rejected parcel",
-  "Customer unavailable",
-  "Address not found",
-  "Other",
-];
 
 export default function DeliveryUpdatesPage() {
   const searchParams = useSearchParams();
@@ -51,12 +42,6 @@ export default function DeliveryUpdatesPage() {
 
   // Selection for bulk action
   const [selectedParcelIds, setSelectedParcelIds] = useState<Set<string>>(new Set());
-
-  // Fail Delivery Modal
-  const [showFailModal, setShowFailModal] = useState(false);
-  const [failTargetId, setFailTargetId] = useState<string | null>(null);
-  const [failReason, setFailReason] = useState<FailureReason>("Customer did not answer");
-  const [failRemarks, setFailRemarks] = useState("");
 
   // Load couriers
   useEffect(() => {
@@ -119,21 +104,24 @@ export default function DeliveryUpdatesPage() {
   // Real database stats from actual parcel records
   const stats = useMemo(() => {
     const total = parcels.length;
-    const delivered = parcels.filter((p) => p.status === "Delivered").length;
-    const failed = parcels.filter((p) => p.status === "Delivery Attempt Failed").length;
-    const returned = parcels.filter((p) => p.status === "Returned to Warehouse" || p.status === "Return Initiated").length;
-    const awaiting = parcels.filter((p) => p.status === "With Courier" || p.status === "Pending Verification").length;
-    const totalDeliveredCod = parcels
-      .filter((p) => p.status === "Delivered")
-      .reduce((sum, p) => sum + p.codAmount, 0);
+    const returned = parcels.filter(
+      (p) => p.status === "Returned to Warehouse" || p.status === "Return Initiated"
+    ).length;
+    const delivered = Math.max(0, total - returned);
+    const nonReturned = parcels.filter(
+      (p) => p.status !== "Returned to Warehouse" && p.status !== "Return Initiated"
+    );
+    const totalDeliveredCod = nonReturned.reduce((sum, p) => sum + (p.codAmount || 0), 0);
 
-    return { total, delivered, failed, returned, awaiting, totalDeliveredCod };
+    return { total, delivered, returned, totalDeliveredCod };
   }, [parcels]);
 
   // Filtered parcels
   const filteredParcels = useMemo(() => {
     return parcels.filter((p) => {
-      if (filterStatus !== "all" && p.status !== filterStatus) return false;
+      const isReturned = p.status === "Returned to Warehouse" || p.status === "Return Initiated";
+      if (filterStatus === "Delivered" && isReturned) return false;
+      if (filterStatus === "Returned to Warehouse" && !isReturned) return false;
       if (startDate && p.dispatchDate < startDate) return false;
       if (endDate && p.dispatchDate > endDate) return false;
       if (search.trim()) {
@@ -195,39 +183,6 @@ export default function DeliveryUpdatesPage() {
     }
   };
 
-  // Confirm Delivery Attempt Failed
-  const handleConfirmFailed = async () => {
-    const targets = failTargetId ? [failTargetId] : Array.from(selectedParcelIds);
-    if (targets.length === 0) return;
-
-    try {
-      const res = await fetch("/api/parcels/bulk-status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          parcelIds: targets,
-          status: "Delivery Attempt Failed",
-          reason: failReason,
-          remarks: failRemarks,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to update status");
-      }
-
-      toast.success(`Updated ${data.updatedCount} parcels to 'Delivery Attempt Failed'`);
-      setShowFailModal(false);
-      setFailTargetId(null);
-      setFailRemarks("");
-      refreshParcels();
-      setSelectedParcelIds(new Set());
-    } catch (err: any) {
-      toast.error(err.message || "Error updating parcels");
-    }
-  };
-
   const refreshParcels = () => {
     if (!selectedBatchId) return;
     fetch(`/api/parcels?batchId=${selectedBatchId}`)
@@ -250,7 +205,7 @@ export default function DeliveryUpdatesPage() {
               <span>Courier Delivery Reconciliation</span>
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Select a courier and dispatch batch to reconcile delivered and failed deliveries
+              Select a courier and dispatch batch to review delivered and returned parcels
             </p>
           </div>
 
@@ -290,8 +245,8 @@ export default function DeliveryUpdatesPage() {
           </div>
         </div>
 
-        {/* Real Batch Statistics Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+        {/* Real Batch Statistics Strip - Simplified to Total, Delivered, Returned & Delivered COD */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
               Total Dispatched
@@ -310,30 +265,12 @@ export default function DeliveryUpdatesPage() {
             </p>
           </div>
 
-          <div className="p-3 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-              Attempt Failed
-            </span>
-            <p className="text-lg font-bold text-amber-700 dark:text-amber-400 mt-0.5">
-              {stats.failed}
-            </p>
-          </div>
-
           <div className="p-3 rounded-xl bg-rose-50/60 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40">
             <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">
               Returned
             </span>
             <p className="text-lg font-bold text-rose-700 dark:text-rose-400 mt-0.5">
               {stats.returned}
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-              Awaiting Update
-            </span>
-            <p className="text-lg font-bold text-blue-700 dark:text-blue-400 mt-0.5">
-              {stats.awaiting}
             </p>
           </div>
 
@@ -368,9 +305,7 @@ export default function DeliveryUpdatesPage() {
             className="text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-slate-800 dark:text-slate-200 focus:outline-none"
           >
             <option value="all">All Statuses ({parcels.length})</option>
-            <option value="With Courier">Awaiting / With Courier ({stats.awaiting})</option>
             <option value="Delivered">Delivered ({stats.delivered})</option>
-            <option value="Delivery Attempt Failed">Attempt Failed ({stats.failed})</option>
             <option value="Returned to Warehouse">Returned ({stats.returned})</option>
           </select>
 
@@ -408,16 +343,6 @@ export default function DeliveryUpdatesPage() {
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Mark Delivered</span>
-            </button>
-            <button
-              onClick={() => {
-                setFailTargetId(null);
-                setShowFailModal(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition-all"
-            >
-              <XCircle className="w-3.5 h-3.5" />
-              <span>Mark Failed</span>
             </button>
           </div>
         )}
@@ -528,46 +453,33 @@ export default function DeliveryUpdatesPage() {
                       </td>
                       <td className="py-3 px-3 text-center">
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                            parcel.status === "Delivered"
-                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                              : parcel.status === "Returned to Warehouse"
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            parcel.status === "Returned to Warehouse" || parcel.status === "Return Initiated"
                               ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
-                              : parcel.status === "Delivery Attempt Failed"
-                              ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
-                              : "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+                              : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
                           }`}
                         >
-                          {parcel.status}
+                          {parcel.status === "Returned to Warehouse" || parcel.status === "Return Initiated" ? "Returned" : "Delivered"}
                         </span>
-                        {parcel.failureReason && (
-                          <span className="block text-[9px] text-amber-600 mt-0.5">
-                            {parcel.failureReason}
-                          </span>
-                        )}
                       </td>
-                      <td className="py-3 px-3 text-right space-x-1">
-                        {parcel.status !== "Delivered" && (
+                      <td className="py-3 px-3 text-right">
+                        {parcel.status === "Returned to Warehouse" || parcel.status === "Return Initiated" ? (
+                          <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                            Returned
+                          </span>
+                        ) : parcel.status === "Delivered" ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Delivered</span>
+                          </span>
+                        ) : (
                           <button
                             onClick={() => handleMarkDelivered([parcel.parcelId])}
-                            title="Mark Delivered"
-                            className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 transition-colors"
+                            title="Confirm Delivered"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 transition-colors border border-emerald-200 dark:border-emerald-800"
                           >
                             <CheckCircle2 className="w-3 h-3" />
-                            <span>Delivered</span>
-                          </button>
-                        )}
-                        {parcel.status !== "Delivery Attempt Failed" && (
-                          <button
-                            onClick={() => {
-                              setFailTargetId(parcel.parcelId);
-                              setShowFailModal(true);
-                            }}
-                            title="Mark Failed"
-                            className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 transition-colors"
-                          >
-                            <XCircle className="w-3 h-3" />
-                            <span>Failed</span>
+                            <span>Mark Delivered</span>
                           </button>
                         )}
                       </td>
@@ -579,77 +491,6 @@ export default function DeliveryUpdatesPage() {
           </table>
         </div>
       </div>
-
-      {/* Failure Reason Modal */}
-      {showFailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                  Record Delivery Attempt Failure
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Select failure reason and optional notes
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Reason for Failure <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={failReason}
-                  onChange={(e) => setFailReason(e.target.value as FailureReason)}
-                  className="w-full text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {FAILURE_REASONS.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Remarks / Notes
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="e.g. Called multiple times, customer asked to reschedule for tomorrow"
-                  value={failRemarks}
-                  onChange={(e) => setFailRemarks(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <button
-                onClick={() => {
-                  setShowFailModal(false);
-                  setFailTargetId(null);
-                }}
-                className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmFailed}
-                className="px-5 py-2 text-xs font-semibold rounded-xl bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-500/20 transition-colors"
-              >
-                Confirm Failure
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
