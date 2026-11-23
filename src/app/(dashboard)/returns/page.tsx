@@ -108,6 +108,16 @@ export default function ReturnManagementPage() {
   const [returnStartDate, setReturnStartDate] = useState("");
   const [returnEndDate, setReturnEndDate] = useState("");
 
+  // Revert / Cancel Return Modal State
+  const [revertTarget, setRevertTarget] = useState<{
+    returnId?: string;
+    parcelId: string;
+    customerName?: string;
+    customerPhone?: string;
+    batchId?: string;
+  } | null>(null);
+  const [cancellingReturn, setCancellingReturn] = useState(false);
+
   const filteredReturns = recentReturns.filter((r) => {
     if (returnStartDate && r.returnDate < returnStartDate) return false;
     if (returnEndDate && r.returnDate > returnEndDate) return false;
@@ -199,6 +209,48 @@ export default function ReturnManagementPage() {
       })
       .catch(console.error)
       .finally(() => setLoadingReturns(false));
+  };
+
+  const handleConfirmRevertToDelivered = async () => {
+    if (!revertTarget) return;
+    setCancellingReturn(true);
+    const toastId = toast.loading(`Reverting parcel ${revertTarget.parcelId} to Delivered...`);
+    try {
+      const query = new URLSearchParams();
+      if (revertTarget.returnId) query.set("returnId", revertTarget.returnId);
+      if (revertTarget.parcelId) query.set("parcelId", revertTarget.parcelId);
+
+      const res = await fetch(`/api/returns?${query.toString()}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to cancel return");
+      }
+
+      toast.success(data.message || `Parcel ${revertTarget.parcelId} restored to Delivered!`, {
+        id: toastId,
+      });
+
+      setRevertTarget(null);
+      fetchRecentReturns();
+
+      // Refresh current batch parcels if viewing a batch
+      if (effectiveBatchId && selectedCourierId) {
+        loadBatchParcels(effectiveBatchId, selectedCourierId);
+      }
+
+      // If the currently selected parcel was the reverted one, update its state
+      if (selectedParcel?.parcelId === revertTarget.parcelId) {
+        setSelectedParcel((prev) =>
+          prev ? { ...prev, status: "Delivered", returnDate: undefined, returnReason: undefined } : null
+        );
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to cancel return", { id: toastId });
+    } finally {
+      setCancellingReturn(false);
+    }
   };
 
   // Batch stats summary
@@ -1029,17 +1081,36 @@ export default function ReturnManagementPage() {
                             </span>
                           </td>
                           <td className="py-2 px-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleSelectParcel(p)}
-                              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                                isSelected
-                                  ? "bg-blue-600 text-white shadow-xs"
-                                  : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-blue-600 hover:text-white"
-                              }`}
-                            >
-                              {isSelected ? "Selected ✓" : "Select for Return"}
-                            </button>
+                            {isAlreadyReturned ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setRevertTarget({
+                                    parcelId: p.parcelId,
+                                    customerName: p.customerName,
+                                    customerPhone: p.customerPhone,
+                                    batchId: p.batchId,
+                                  })
+                                }
+                                title="Wrong entry? Cancel return and restore to Delivered"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-colors shadow-xs cursor-pointer"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Revert to Delivered</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleSelectParcel(p)}
+                                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                                  isSelected
+                                    ? "bg-blue-600 text-white shadow-xs"
+                                    : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-blue-600 hover:text-white"
+                                }`}
+                              >
+                                {isSelected ? "Selected ✓" : "Select for Return"}
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
@@ -1074,8 +1145,26 @@ export default function ReturnManagementPage() {
               </div>
 
               {selectedParcel.status === "Returned to Warehouse" ? (
-                <div className="p-3 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-semibold">
-                  ✓ This parcel is already accepted into warehouse inventory ({selectedParcel.returnDate}).
+                <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <span className="font-bold block">✓ This parcel is currently marked as Returned to Warehouse ({selectedParcel.returnDate || "inwarded"}).</span>
+                    <span className="text-[11px] text-amber-700 dark:text-amber-400">Mistaken return entry? You can cancel this return and restore the parcel to Delivered status.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRevertTarget({
+                        parcelId: selectedParcel.parcelId,
+                        customerName: selectedParcel.customerName,
+                        customerPhone: selectedParcel.customerPhone,
+                        batchId: selectedParcel.batchId,
+                      })
+                    }
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm whitespace-nowrap cursor-pointer transition-colors"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Revert to Delivered</span>
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -1411,18 +1500,19 @@ export default function ReturnManagementPage() {
                 <th className="py-2.5 px-4 font-bold text-slate-600 dark:text-slate-300">RETURN REASON</th>
                 <th className="py-2.5 px-4 font-bold text-slate-600 dark:text-slate-300">RETURN DATE</th>
                 <th className="py-2.5 px-4 font-bold text-slate-600 dark:text-slate-300">PROCESSED BY</th>
+                <th className="py-2.5 px-4 font-bold text-slate-600 dark:text-slate-300 text-right">ACTIONS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loadingReturns ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-slate-400">
+                  <td colSpan={10} className="py-8 text-center text-slate-400">
                     Loading returns...
                   </td>
                 </tr>
               ) : filteredReturns.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-slate-400">
+                  <td colSpan={10} className="py-8 text-center text-slate-400">
                     No returns found for the selected date range.
                   </td>
                 </tr>
@@ -1453,6 +1543,25 @@ export default function ReturnManagementPage() {
                     </td>
                     <td className="py-2.5 px-4 font-mono text-slate-500">{r.returnDate}</td>
                     <td className="py-2.5 px-4 text-slate-600 dark:text-slate-400">{r.processedBy}</td>
+                    <td className="py-2.5 px-4 text-right whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setRevertTarget({
+                            returnId: r.returnId,
+                            parcelId: r.parcelId,
+                            customerName: r.customerName,
+                            customerPhone: r.customerPhone,
+                            batchId: r.batchId,
+                          })
+                        }
+                        title="Mistaken return entry? Cancel return and restore to Delivered"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-colors shadow-xs cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Revert to Delivered</span>
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -1461,6 +1570,82 @@ export default function ReturnManagementPage() {
         </div>
       </div>
 
+      {/* Revert / Cancel Return Confirmation Modal */}
+      {revertTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                  Revert Return to Delivered?
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Cancel accidental return and restore parcel status
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-xs space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Parcel ID:</span>
+                <span className="font-mono font-bold text-blue-600">{revertTarget.parcelId}</span>
+              </div>
+              {revertTarget.customerName && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Customer:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{revertTarget.customerName}</span>
+                </div>
+              )}
+              {revertTarget.customerPhone && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Mobile:</span>
+                  <span className="font-mono">{revertTarget.customerPhone}</span>
+                </div>
+              )}
+              {revertTarget.batchId && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Batch Code:</span>
+                  <span className="font-mono font-semibold">{revertTarget.batchId}</span>
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              This will remove the return record, decrement the batch & courier return counters, and restore the parcel to <strong>Delivered</strong> status.
+            </p>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setRevertTarget(null)}
+                disabled={cancellingReturn}
+                className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRevertToDelivered}
+                disabled={cancellingReturn}
+                className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white shadow-md shadow-emerald-500/20 transition-colors"
+              >
+                {cancellingReturn ? (
+                  <span>Processing...</span>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Confirm & Mark Delivered</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Return Details Modal from Courier with Batch ID */}
       <BatchReturnsModal
         isOpen={showBatchReturnsModal}
@@ -1468,6 +1653,12 @@ export default function ReturnManagementPage() {
         batchId={effectiveBatchId}
         courierName={selectedCourier?.name || "Selected Courier"}
         parcels={batchParcels}
+        onReturnCancelled={() => {
+          fetchRecentReturns();
+          if (effectiveBatchId && selectedCourierId) {
+            loadBatchParcels(effectiveBatchId, selectedCourierId);
+          }
+        }}
       />
     </div>
   );

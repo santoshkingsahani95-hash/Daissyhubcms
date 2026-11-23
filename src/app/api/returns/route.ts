@@ -5,6 +5,7 @@ import {
   searchParcelsForReturn,
   processReturnInward,
   processBulkReturnInward,
+  cancelReturnInward,
 } from "@/lib/db-service";
 
 export async function GET(req: NextRequest) {
@@ -43,6 +44,28 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+
+    // Cancel return action via POST
+    if (body.action === "cancel" || body.action === "revert") {
+      const { returnId, parcelId, reason } = body;
+      if (!returnId && !parcelId) {
+        return NextResponse.json(
+          { success: false, message: "Either returnId or parcelId is required." },
+          { status: 400 }
+        );
+      }
+      const result = await cancelReturnInward({
+        returnId,
+        parcelId,
+        cancelledBy: user?.name || "Admin",
+        reason,
+      });
+      return NextResponse.json({
+        success: true,
+        message: result.message,
+        parcel: result.parcel,
+      });
+    }
 
     // Bulk return processing by Courier and Batch
     if (body.action === "bulk" || Array.isArray(body.returns)) {
@@ -101,6 +124,41 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Error processing return";
+    return NextResponse.json({ success: false, message }, { status: 400 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const { user, errorResponse } = await checkAuthAndPermission(req, "returns:manage");
+  if (errorResponse) return errorResponse;
+
+  const { searchParams } = new URL(req.url);
+  const returnId = searchParams.get("returnId") || undefined;
+  const parcelId = searchParams.get("parcelId") || undefined;
+  const reason = searchParams.get("reason") || undefined;
+
+  if (!returnId && !parcelId) {
+    return NextResponse.json(
+      { success: false, message: "Either returnId or parcelId is required to cancel return." },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const result = await cancelReturnInward({
+      returnId,
+      parcelId,
+      cancelledBy: user?.name || "Admin",
+      reason,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: result.message,
+      parcel: result.parcel,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Error cancelling return";
     return NextResponse.json({ success: false, message }, { status: 400 });
   }
 }

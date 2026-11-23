@@ -14,7 +14,9 @@ import {
   Building2,
   Boxes,
   FileCheck2,
+  CheckCircle2,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 import { IParcel } from "@/types";
 
 interface BatchReturnsModalProps {
@@ -23,6 +25,7 @@ interface BatchReturnsModalProps {
   batchId: string;
   courierName: string;
   parcels: IParcel[];
+  onReturnCancelled?: (parcelId: string) => void;
 }
 
 export function BatchReturnsModal({
@@ -31,8 +34,10 @@ export function BatchReturnsModal({
   batchId,
   courierName,
   parcels,
+  onReturnCancelled,
 }: BatchReturnsModalProps) {
   const [search, setSearch] = useState("");
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   // Filter only parcels returned in this batch
   const returnedParcels = useMemo(() => {
@@ -66,6 +71,31 @@ export function BatchReturnsModal({
   const totalAdvancePaid = useMemo(() => {
     return returnedParcels.reduce((sum, p) => sum + (p.advancePayment || 0), 0);
   }, [returnedParcels]);
+
+  const handleCancelReturn = async (parcelId: string) => {
+    if (!confirm(`Cancel return for parcel #${parcelId} and restore status to Delivered?`)) {
+      return;
+    }
+    setCancellingId(parcelId);
+    const toastId = toast.loading(`Reverting parcel ${parcelId} to Delivered...`);
+    try {
+      const res = await fetch(`/api/returns?parcelId=${encodeURIComponent(parcelId)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to cancel return");
+      }
+      toast.success(data.message || `Parcel ${parcelId} restored to Delivered!`, { id: toastId });
+      if (onReturnCancelled) {
+        onReturnCancelled(parcelId);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to cancel return", { id: toastId });
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -186,12 +216,13 @@ export function BatchReturnsModal({
                   <th className="py-2.5 px-3">RETURN DATE</th>
                   <th className="py-2.5 px-3">PROCESSED BY</th>
                   <th className="py-2.5 px-3">WAREHOUSE NOTES</th>
+                  <th className="py-2.5 px-3 text-right">ACTIONS</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="py-12 text-center text-slate-400">
+                    <td colSpan={12} className="py-12 text-center text-slate-400">
                       {returnedParcels.length === 0 ? (
                         <div className="space-y-1">
                           <p className="font-semibold text-slate-600 dark:text-slate-300">
@@ -246,6 +277,18 @@ export function BatchReturnsModal({
                       </td>
                       <td className="py-2.5 px-3 text-slate-500 max-w-[160px] truncate">
                         {p.remarks || "-"}
+                      </td>
+                      <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleCancelReturn(p.parcelId)}
+                          disabled={cancellingId === p.parcelId}
+                          title="Mistaken return entry? Cancel return and restore to Delivered"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-colors shadow-xs cursor-pointer"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Revert to Delivered</span>
+                        </button>
                       </td>
                     </tr>
                   ))

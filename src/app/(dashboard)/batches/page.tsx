@@ -1099,6 +1099,20 @@ export default function ParcelBatchesPage() {
         batchId={returnModalBatch?.batchId || ""}
         courierName={returnModalBatch?.courierName || ""}
         parcels={returnModalParcels}
+        onReturnCancelled={async () => {
+          fetchBatches();
+          if (returnModalBatch) {
+            try {
+              const res = await fetch(
+                `/api/parcels?batchId=${encodeURIComponent(returnModalBatch.batchId)}&limit=1000`
+              );
+              const d = await res.json();
+              if (d.success && d.parcels) {
+                setReturnModalParcels(d.parcels);
+              }
+            } catch {}
+          }
+        }}
       />
 
       {/* Delete Batch Confirmation Modal */}

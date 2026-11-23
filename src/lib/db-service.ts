@@ -2403,6 +2403,152 @@ export async function processBulkReturnInward(data: {
   };
 }
 
+export async function cancelReturnInward(params: {
+  returnId?: string;
+  parcelId?: string;
+  cancelledBy: string;
+  reason?: string;
+}): Promise<{ success: boolean; message: string; parcel: IParcel }> {
+  const isMongo = await checkMongoConnection();
+  const now = new Date().toISOString();
+  let targetParcelId = params.parcelId?.trim() || "";
+  let targetReturnId = params.returnId?.trim() || "";
+  let batchId = "";
+  let courierId = "";
+  let updatedParcel: IParcel | null = null;
+
+  if (isMongo) {
+    try {
+      let retDoc: any = null;
+      if (targetReturnId) {
+        retDoc = await Return.findOne({
+          $or: [{ returnId: targetReturnId }, { _id: targetReturnId }],
+        }).lean();
+      }
+      if (!retDoc && targetParcelId) {
+        retDoc = await Return.findOne({ parcelId: targetParcelId }).lean();
+      }
+
+      if (retDoc) {
+        targetParcelId = retDoc.parcelId;
+        targetReturnId = retDoc.returnId;
+        batchId = retDoc.batchId;
+        courierId = retDoc.courierId;
+        await Return.deleteOne({ _id: retDoc._id });
+      } else if (targetParcelId) {
+        await Return.deleteMany({ parcelId: targetParcelId });
+      }
+
+      if (targetParcelId) {
+        const parcelDoc = await Parcel.findOne({
+          $or: [{ parcelId: targetParcelId }, { _id: targetParcelId }],
+        });
+
+        if (parcelDoc) {
+          batchId = parcelDoc.batchId || batchId;
+          courierId = parcelDoc.courierId || courierId;
+          const oldStatus = parcelDoc.status;
+          parcelDoc.status = "Delivered";
+          parcelDoc.returnDate = undefined;
+          parcelDoc.returnReason = undefined;
+          parcelDoc.returnedProcessedBy = undefined;
+          parcelDoc.updatedAt = new Date() as any;
+
+          if (!parcelDoc.statusHistory) parcelDoc.statusHistory = [];
+          parcelDoc.statusHistory.push({
+            previousStatus: oldStatus,
+            newStatus: "Delivered",
+            timestamp: now,
+            updatedBy: params.cancelledBy,
+            reason: params.reason || "Return cancelled - parcel marked as delivered",
+            remarks: "Accidental return inward cancelled; reverted to Delivered state",
+          });
+
+          await parcelDoc.save();
+          updatedParcel = JSON.parse(JSON.stringify(parcelDoc));
+        }
+      }
+
+      if (batchId) {
+        await syncBatchCountsMongo(batchId);
+      }
+      if (courierId) {
+        await syncCourierStatsMongo(courierId);
+      }
+    } catch (err: any) {
+      console.error("MongoDB cancelReturnInward error:", err);
+    }
+  }
+
+  // Local fallback / sync
+  const local = readLocalData();
+  const retIdx = local.returns.findIndex(
+    (r) =>
+      (targetReturnId && (r.returnId === targetReturnId || r._id === targetReturnId)) ||
+      (targetParcelId && r.parcelId === targetParcelId)
+  );
+  if (retIdx !== -1) {
+    if (!targetParcelId) targetParcelId = local.returns[retIdx].parcelId;
+    if (!batchId) batchId = local.returns[retIdx].batchId;
+    if (!courierId) courierId = local.returns[retIdx].courierId;
+    local.returns.splice(retIdx, 1);
+  }
+
+  const pIdx = local.parcels.findIndex(
+    (p) => p.parcelId === targetParcelId || p._id === targetParcelId
+  );
+  if (pIdx !== -1) {
+    const p = local.parcels[pIdx];
+    if (!batchId) batchId = p.batchId;
+    if (!courierId) courierId = p.courierId;
+    const oldStatus = p.status;
+    p.status = "Delivered";
+    delete p.returnDate;
+    delete p.returnReason;
+    delete p.returnedProcessedBy;
+    p.updatedAt = now;
+    if (!p.statusHistory) p.statusHistory = [];
+    p.statusHistory.push({
+      previousStatus: oldStatus,
+      newStatus: "Delivered",
+      timestamp: now,
+      updatedBy: params.cancelledBy,
+      reason: params.reason || "Return cancelled - parcel marked as delivered",
+      remarks: "Accidental return inward cancelled; reverted to Delivered state",
+    });
+    if (!updatedParcel) updatedParcel = p;
+  }
+
+  if (batchId) recalculateBatchCounts(local, batchId);
+  if (courierId) recalculateCourierStats(local, courierId);
+
+  local.activityLogs.unshift({
+    _id: "act-" + Date.now(),
+    action: "RETURN_CANCELLED",
+    details: `Cancelled return for parcel ${targetParcelId || targetReturnId} and reverted status to Delivered.`,
+    userName: params.cancelledBy,
+    createdAt: now,
+  });
+
+  writeLocalData(local);
+
+  dbCache.invalidateNamespace("returns");
+  dbCache.invalidateNamespace("parcels");
+  dbCache.invalidateNamespace("batches");
+  dbCache.invalidateNamespace("dashboard");
+  dbCache.invalidateNamespace("couriers");
+
+  if (!updatedParcel) {
+    throw new Error(`Parcel ${targetParcelId || targetReturnId} not found to cancel return`);
+  }
+
+  return {
+    success: true,
+    message: `Return for parcel ${updatedParcel.parcelId} has been successfully cancelled and reverted to Delivered!`,
+    parcel: updatedParcel,
+  };
+}
+
 export async function getReturns(filters?: {
   courierId?: string;
   startDate?: string;
