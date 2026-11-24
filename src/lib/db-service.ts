@@ -894,6 +894,33 @@ export async function createBatchWithParcels(
     (await getNextBatchId(batchData.courierId, batchData.dispatchDate, batchData.courierName));
   const now = new Date().toISOString();
 
+  const isMongo = await checkMongoConnection();
+  const datePart = (batchData.dispatchDate || getTodayString()).replace(/-/g, "");
+
+  // Pre-calculate maximum parcel ID sequence for this dispatch date to avoid duplicate key errors across batches
+  let maxPNum = 0;
+  if (isMongo) {
+    try {
+      const dateParcels = await Parcel.find({ parcelId: new RegExp(`^DH-${datePart}-`) }).lean();
+      for (const p of dateParcels) {
+        const parts = p.parcelId.split("-");
+        const num = parseInt(parts[2], 10);
+        if (!isNaN(num) && num > maxPNum) maxPNum = num;
+      }
+    } catch (err: any) {
+      console.warn("Error finding max parcel sequence in Mongo:", err.message);
+    }
+  }
+
+  const local = readLocalData();
+  for (const p of local.parcels) {
+    if (p.parcelId?.startsWith(`DH-${datePart}-`)) {
+      const parts = p.parcelId.split("-");
+      const num = parseInt(parts[2], 10);
+      if (!isNaN(num) && num > maxPNum) maxPNum = num;
+    }
+  }
+
   let totalCod = 0;
   let totalAdvance = 0;
   let totalDelivery = 0;
@@ -906,11 +933,11 @@ export async function createBatchWithParcels(
     totalAdvance += advance;
     totalDelivery += charge;
 
-    const numStr = String(idx + 1).padStart(3, "0");
-    const parcelId = `DH-${batchData.dispatchDate.replace(/-/g, "")}-${numStr}`;
+    const numStr = String(maxPNum + idx + 1).padStart(3, "0");
+    const parcelId = `DH-${datePart}-${numStr}`;
 
     return {
-      _id: "parcel-" + Date.now() + "-" + idx,
+      _id: "parcel-" + Date.now() + "-" + idx + "-" + Math.random().toString(36).substring(2, 6),
       parcelId,
       batchId,
       courierId: batchData.courierId,
@@ -963,7 +990,6 @@ export async function createBatchWithParcels(
     updatedAt: now,
   };
 
-  const isMongo = await checkMongoConnection();
   if (isMongo) {
     try {
       await Batch.create(newBatch);
@@ -971,12 +997,18 @@ export async function createBatchWithParcels(
       await CourierCompany.findByIdAndUpdate(batchData.courierId, {
         $inc: { totalParcelsDispatched: newParcels.length },
       });
-    } catch (e) {
-      console.warn("Mongo insert failed, saving to local store", e);
+      await syncCourierStatsMongo(batchData.courierId);
+    } catch (e: any) {
+      console.error("MongoDB batch/parcel insert failed:", e);
+      // Rollback orphaned batch if it was created
+      try {
+        await Batch.deleteOne({ _id: newBatch._id });
+        await Parcel.deleteMany({ batchId: newBatch.batchId });
+      } catch {}
+      throw new Error(`Failed to save batch parcels to database: ${e.message || e}`);
     }
   }
 
-  const local = readLocalData();
   local.batches.unshift(newBatch);
   local.parcels.push(...newParcels);
 
