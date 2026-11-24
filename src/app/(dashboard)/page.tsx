@@ -207,7 +207,7 @@ export default function DashboardPage() {
           <p className="text-xl font-bold font-mono text-rose-500 mt-1">
             Rs. {(stats?.totalDeliveryCharges || 0).toLocaleString("en-IN")}
           </p>
-          <span className="text-[10px] text-slate-500 mt-1 block">Courier fees</span>
+          <span className="text-[10px] text-slate-500 mt-1 block">For delivered packages</span>
         </div>
 
         {/* Total Outstanding from Couriers */}
@@ -218,7 +218,7 @@ export default function DashboardPage() {
           <p className="text-xl font-black font-mono text-white mt-1">
             Rs. {(stats?.totalOutstanding || 0).toLocaleString("en-IN")}
           </p>
-          <span className="text-[10px] text-slate-400 mt-1 block">Owed by couriers</span>
+          <span className="text-[10px] text-slate-400 mt-1 block">Net receivable (COD - Fees)</span>
         </div>
       </div>
 

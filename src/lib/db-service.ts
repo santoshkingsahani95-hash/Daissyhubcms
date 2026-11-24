@@ -4096,8 +4096,7 @@ export async function getDashboardStats(filters?: {
         (p: any) => p.status !== "Returned to Warehouse" && p.status !== "Return Initiated"
       );
       const totalCodCollected = deliveredParcels.reduce((sum: number, p: any) => sum + (p.codAmount || 0), 0);
-      const totalDeliveryCharges = allParcels.reduce((sum: number, p: any) => sum + (p.deliveryCharge || 0), 0);
-      const totalOutstanding = couriersList.reduce((sum: number, c: any) => sum + (c.currentBalance || 0), 0);
+      const totalDeliveryCharges = deliveredParcels.reduce((sum: number, p: any) => sum + (p.deliveryCharge || 0), 0);
 
       const courierPerformance = couriersList.map((c: any) => {
         const cParcels = allParcels.filter((p: any) => p.courierId === c._id);
@@ -4105,6 +4104,18 @@ export async function getDashboardStats(filters?: {
         const cDelivered = cParcels.filter((p: any) => p.status !== "Returned to Warehouse" && p.status !== "Return Initiated");
         const cCod = cDelivered.reduce((sum: number, p: any) => sum + (p.codAmount || 0), 0);
         const deliveryRate = cParcels.length > 0 ? Math.round((cDelivered.length / cParcels.length) * 100) : 0;
+
+        // Calculate true outstanding due:
+        // 1. Unsettled delivered parcels net collection (COD - delivery charges)
+        // 2. Finalized unpaid settlement statements balance
+        const cUnsettledDelivered = cDelivered.filter((p: any) => !p.isSettled);
+        const unsettledNet = cUnsettledDelivered.reduce(
+          (sum: number, p: any) => sum + (p.codAmount || 0) - (p.deliveryCharge || 0),
+          0
+        );
+        const settlementBalance = c.currentBalance || 0;
+        const netOutstanding = Math.max(0, unsettledNet + settlementBalance);
+
         return {
           _id: c._id,
           name: c.name,
@@ -4115,10 +4126,12 @@ export async function getDashboardStats(filters?: {
           returned: cReturned.length,
           deliveryRate,
           totalCod: cCod,
-          outstanding: c.currentBalance || 0,
+          outstanding: netOutstanding,
           isActive: c.isActive,
         };
       });
+
+      const totalOutstanding = courierPerformance.reduce((sum: number, c: any) => sum + (c.outstanding || 0), 0);
 
       const stats = {
         dispatchedToday,
@@ -4170,24 +4183,26 @@ export async function getDashboardStats(filters?: {
     (p) => p.status !== "Returned to Warehouse" && p.status !== "Return Initiated"
   );
   const totalCodCollected = deliveredParcels.reduce((sum, p) => sum + (p.codAmount || 0), 0);
-  const totalDeliveryCharges = parcels.reduce((sum, p) => sum + (p.deliveryCharge || 0), 0);
-
-  // Couriers outstanding
-  let couriers = local.couriers;
-  if (filters?.courierId) {
-    couriers = couriers.filter((c) => c._id === filters.courierId);
-  }
-  const totalOutstanding = couriers.reduce((sum, c) => sum + (c.currentBalance || 0), 0);
+  const totalDeliveryCharges = deliveredParcels.reduce((sum, p) => sum + (p.deliveryCharge || 0), 0);
 
   // Performance by courier
-  const courierPerformance = local.couriers.map((c) => {
-    const cParcels = local.parcels.filter((p) => p.courierId === c._id);
+  const couriersToReport = filters?.courierId ? local.couriers.filter(c => c._id === filters.courierId) : local.couriers;
+  const courierPerformance = couriersToReport.map((c) => {
+    const cParcels = parcels.filter((p) => p.courierId === c._id);
     const cReturned = cParcels.filter((p) => p.status === "Returned to Warehouse" || p.status === "Return Initiated");
     const cDelivered = cParcels.filter((p) => p.status !== "Returned to Warehouse" && p.status !== "Return Initiated");
     const cCod = cDelivered.reduce((sum, p) => sum + (p.codAmount || 0), 0);
 
     const deliveryRate =
       cParcels.length > 0 ? Math.round((cDelivered.length / cParcels.length) * 100) : 0;
+
+    const cUnsettledDelivered = cDelivered.filter((p) => !p.isSettled);
+    const unsettledNet = cUnsettledDelivered.reduce(
+      (sum, p) => sum + (p.codAmount || 0) - (p.deliveryCharge || 0),
+      0
+    );
+    const settlementBalance = c.currentBalance || 0;
+    const netOutstanding = Math.max(0, unsettledNet + settlementBalance);
 
     return {
       _id: c._id,
@@ -4199,10 +4214,12 @@ export async function getDashboardStats(filters?: {
       returned: cReturned.length,
       deliveryRate,
       totalCod: cCod,
-      outstanding: c.currentBalance || 0,
+      outstanding: netOutstanding,
       isActive: c.isActive,
     };
   });
+
+  const totalOutstanding = courierPerformance.reduce((sum, c) => sum + (c.outstanding || 0), 0);
 
   const stats = {
     dispatchedToday,
